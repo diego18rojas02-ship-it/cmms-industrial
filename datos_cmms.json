@@ -1,0 +1,147 @@
+{
+    "maquinas": [
+        {
+            "codigo": "CCM6",
+            "nombre": "CCM6",
+            "ultimo": 121312
+        },
+        {
+            "codigo": "DICER200",
+            "nombre": "Dicer 200 - Tula",
+            "ultimo": 0
+        },
+        {
+            "codigo": "DICER250",
+            "nombre": "Dicer 250",
+            "ultimo": 50
+        },
+        {
+            "codigo": "AUTOCLAVE",
+            "nombre": "Autoclave",
+            "ultimo": 0
+        },
+        {
+            "codigo": "COMPACTADORA",
+            "nombre": "Compactadora",
+            "ultimo": 0
+        },
+        {
+            "codigo": "PULVERIZADORA",
+            "nombre": "Pulverizadora",
+            "ultimo": 0
+        },
+        {
+            "codigo": "MINICARGADOR",
+            "nombre": "Minicargador",
+            "ultimo": 0
+        },
+        {
+            "codigo": "MONTACARGA",
+            "nombre": "Montacarga",
+            "ultimo": 0
+        }
+    ],
+    "registros": [
+        {
+            "maquina": "CCM6",
+            "horometro": 109999,
+            "fecha": "2026-05-07",
+            "ejecuto_mantenimiento": "Sí",
+            "fecha_mantenimiento": "2026-03-30",
+            "frecuencia": "Quincenal",
+            "proximo_mantenimiento": "Mensual",
+            "horometro_intervencion": "109300",
+            "cambio_aceite": "No",
+            "horas_transcurridas": 699,
+            "dias_por_horometro": 29.1,
+            "dias_por_fecha": 38,
+            "id": "96d4794d-6b94-4620-82dc-24f11a0d069e"
+        },
+        {
+            "id": "3796e5fc-7d33-4e95-8118-418047df363f",
+            "fecha": "2026-05-07",
+            "maquina": "CCM6",
+            "horometro": 121312,
+            "ejecuto_mantenimiento": "No",
+            "frecuencia": "",
+            "proximo_mantenimiento": "",
+            "fecha_mantenimiento": "",
+            "horometro_mantenimiento": "",
+            "horas_transcurridas": "",
+            "dias_por_horometro": "",
+            "cambio_aceite": "No"
+        },
+        {
+            "id": "4f3dfda1-a6f1-4dfd-ae4a-c2d98e5308fe",
+            "fecha": "2026-05-10",
+            "maquina": "CCM6",
+            "horometro": 121312,
+            "dias_rutina": "",
+            "cambio_aceite": "No"
+        },
+        {
+            "id": "18fd8d31-3a92-46b2-b16c-e162d51c64ca",
+            "fecha": "2026-05-10",
+            "maquina": "CCM6",
+            "horometro": 121312
+        }
+    ],
+    "controles": {
+        "CCM6": {
+            "rutina_horometro": 0,
+            "punzones_horometro": 0,
+            "distribuidores_horometro": 0,
+            "bridas_horometro": 0,
+            "aceite_horometro": 0
+        },
+        "DICER200": {
+            "rutina_horometro": 0,
+            "punzones_horometro": 0,
+            "distribuidores_horometro": 0,
+            "bridas_horometro": 0,
+            "aceite_horometro": 0
+        },
+        "DICER250": {
+            "rutina_horometro": 0,
+            "punzones_horometro": 0,
+            "distribuidores_horometro": 0,
+            "bridas_horometro": 0,
+            "aceite_horometro": 0
+        },
+        "AUTOCLAVE": {
+            "rutina_horometro": 0,
+            "punzones_horometro": 0,
+            "distribuidores_horometro": 0,
+            "bridas_horometro": 0,
+            "aceite_horometro": 0
+        },
+        "COMPACTADORA": {
+            "rutina_horometro": 0,
+            "punzones_horometro": 0,
+            "distribuidores_horometro": 0,
+            "bridas_horometro": 0,
+            "aceite_horometro": 0
+        },
+        "PULVERIZADORA": {
+            "rutina_horometro": 0,
+            "punzones_horometro": 0,
+            "distribuidores_horometro": 0,
+            "bridas_horometro": 0,
+            "aceite_horometro": 0
+        },
+        "MINICARGADOR": {
+            "rutina_horometro": 0,
+            "punzones_horometro": 0,
+            "distribuidores_horometro": 0,
+            "bridas_horometro": 0,
+            "aceite_horometro": 0
+        },
+        "MONTACARGA": {
+            "rutina_horometro": 0,
+            "punzones_horometro": 0,
+            "distribuidores_horometro": 0,
+            "bridas_horometro": 0,
+            "aceite_horometro": 0
+        }
+    }
+}

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Horómetros</title>
+</head>
+<body>
+
+<h1>Registro de Horómetros</h1>
+
+{% if mensaje %}
+<p>{{ mensaje }}</p>
+{% endif %}
+
+<form method="POST">
+
+    <label>Máquina:</label>
+    <select name="maquina">
+        {% for m in maquinas %}
+        <option value="{{ m.codigo }}">{{ m.nombre }}</option>
+        {% endfor %}
+    </select>
+
+    <br><br>
+
+    <label>Horómetro:</label>
+    <input type="number" name="horometro" required>
+
+    <br><br>
+
+    <button type="submit">Guardar</button>
+
+</form>
+
+<h2>Registros</h2>
+
+<table border="1">
+    <tr>
+        <th>Máquina</th>
+        <th>Horómetro</th>
+    </tr>
+
+    {% for r in registros %}
+    <tr>
+        <td>{{ r.maquina }}</td>
+        <td>{{ r.horometro }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<br>
+<a href="/">⬅ Volver</a>
+
+</body>
+</html>
