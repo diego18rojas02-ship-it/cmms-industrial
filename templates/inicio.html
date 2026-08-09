@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio | CMMS Industrial</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/inicio.css') }}">
+</head>
+<body>
+
+{% include 'menu.html' %}
+
+<div class="aplicacion">
+    <header class="encabezado">
+        <div>
+            <h1>CMMS Industrial</h1>
+            <p>Control general de mantenimientos</p>
+        </div>
+
+        <div class="resumen-superior">
+            <span class="resumen-item">
+                <small>Máquinas</small>
+                <strong>{{ resumen.total | default(0) }}</strong>
+            </span>
+
+            <span class="resumen-item estado-en_tiempo">
+                <small>En tiempo</small>
+                <strong>{{ resumen.en_tiempo | default(0) }}</strong>
+            </span>
+
+            <span class="resumen-item estado-proximo">
+                <small>Próximo</small>
+                <strong>{{ resumen.proximo | default(0) }}</strong>
+            </span>
+
+            <span class="resumen-item estado-vencido">
+                <small>Vencido</small>
+                <strong>{{ resumen.vencido | default(0) }}</strong>
+            </span>
+
+            <span class="resumen-item estado-critico">
+                <small>Crítico</small>
+                <strong>{{ resumen.critico | default(0) }}</strong>
+            </span>
+        </div>
+    </header>
+
+    <main class="contenido">
+        <section class="rejilla-maquinas">
+
+            {% for maquina in maquinas %}
+
+                {% set horometro_maquina =
+                    maquina.horometro
+                    if maquina.horometro is defined
+                    else maquina.horometro_actual | default(0)
+                %}
+
+                <article class="maquina-card estado-{{ maquina.estado_general | default('sin_datos') }}">
+
+                    <div class="maquina-cabecera">
+                        <div class="maquina-identidad">
+                            <span class="maquina-indicador"></span>
+                            <h2>{{ maquina.nombre }}</h2>
+                        </div>
+
+                        <span class="maquina-estado">
+                            {{ maquina.estado_general_texto | default("Sin datos") }}
+                        </span>
+                    </div>
+
+                    <div class="maquina-horometro">
+                        <span>Horómetro</span>
+                        <strong>
+                            {{ "{:,.0f}".format(horometro_maquina).replace(",", ".") }} h
+                        </strong>
+                    </div>
+
+                    <div class="controles-maquina">
+
+                        {% for control in maquina.controles %}
+
+                            <button
+                                type="button"
+                                class="control-icono estado-{{ control.estado | default('sin_datos') }}"
+                            >
+                                <span class="control-simbolo">
+                                    {{ control.icono }}
+                                </span>
+
+                                <span class="control-nombre">
+                                    {{ control.nombre }}
+                                </span>
+
+                                <span class="control-tiempo">
+                                    {{ control.estado_texto }}
+                                </span>
+
+                                <div class="control-tooltip">
+
+                                    <div class="tooltip-cabecera">
+                                        <span class="tooltip-icono">
+                                            {{ control.icono }}
+                                        </span>
+
+                                        <strong>
+                                            {{ control.nombre }}
+                                        </strong>
+                                    </div>
+
+                                    <div class="tooltip-estado estado-{{ control.estado }}">
+                                        <span>{{ control.estado_icono }}</span>
+                                        <strong>{{ control.estado_texto }}</strong>
+                                    </div>
+
+                                    {% if control.grupos is defined %}
+
+                                        <div class="tooltip-grupos">
+
+                                            {% for grupo in control.grupos %}
+
+                                                <div class="tooltip-grupo">
+
+                                                    <div class="tooltip-grupo-titulo">
+                                                        <span>
+                                                            {% if grupo.nombre == "Agua" %}
+                                                                💧
+                                                            {% else %}
+                                                                🛢
+                                                            {% endif %}
+                                                        </span>
+
+                                                        <strong>
+                                                            {{ grupo.nombre }}
+                                                        </strong>
+
+                                                        <span>
+                                                            {{ grupo.estado_icono }}
+                                                        </span>
+                                                    </div>
+
+                                                    {% for dato in grupo.datos %}
+                                                        <div class="tooltip-linea">
+                                                            {{ dato }}
+                                                        </div>
+                                                    {% endfor %}
+
+                                                </div>
+
+                                            {% endfor %}
+
+                                        </div>
+
+                                    {% else %}
+
+                                        <div class="tooltip-datos">
+
+                                            {% for dato in control.datos %}
+
+                                                {% if dato is mapping and dato.tipo == "doble" %}
+
+                                                    <div class="tooltip-doble">
+                                                        <span>
+                                                            {{ dato.izquierda }}
+                                                        </span>
+
+                                                        <span>
+                                                            {{ dato.derecha }}
+                                                        </span>
+                                                    </div>
+
+                                                {% else %}
+
+                                                    <div class="tooltip-linea">
+                                                        {{ dato }}
+                                                    </div>
+
+                                                {% endif %}
+
+                                            {% endfor %}
+
+                                        </div>
+
+                                    {% endif %}
+
+                                </div>
+
+                            </button>
+
+                        {% endfor %}
+
+                    </div>
+
+                </article>
+
+            {% else %}
+
+                <section class="sin-maquinas">
+                    <h2>No hay máquinas registradas</h2>
+                    <p>Verifique el archivo datos_cmms.json.</p>
+                </section>
+
+            {% endfor %}
+
+        </section>
+    </main>
+</div>
+
+</body>
+</html>

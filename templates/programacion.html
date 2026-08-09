@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Programación | CMMS Industrial</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/programacion.css') }}">
+</head>
+<body>
+
+{% include 'menu.html' %}
+
+<main class="pagina">
+    <header class="encabezado">
+        <span class="eyebrow">CMMS INDUSTRIAL</span>
+        <h1>Programación automática</h1>
+        <p>Seleccione los días de una sola semana y genere la programación de rutina.</p>
+    </header>
+
+    <section class="panel calendario-panel">
+        <div class="calendario-superior">
+            <div>
+                <span class="fecha-hoy-label">HOY</span>
+                <strong id="fechaHoyTexto"></strong>
+            </div>
+
+            <button type="button" class="boton limpiar" id="limpiarSemana">
+                ↺ Limpiar semana
+            </button>
+        </div>
+
+        <div class="calendario-cabecera">
+            <button type="button" id="mesAnterior" class="boton-icono">‹</button>
+            <strong id="tituloMes"></strong>
+            <button type="button" id="mesSiguiente" class="boton-icono">›</button>
+        </div>
+
+        <div class="dias-semana">
+            <span>Lun</span>
+            <span>Mar</span>
+            <span>Mié</span>
+            <span>Jue</span>
+            <span>Vie</span>
+            <span>Sáb</span>
+            <span>Dom</span>
+        </div>
+
+        <div id="calendario" class="calendario"></div>
+
+        <div class="semana-info">
+            <span id="semanaSeleccionada">Seleccione un día para definir la semana.</span>
+            <strong id="diasSeleccionados">0 días seleccionados</strong>
+        </div>
+
+        <div class="acciones-calendario">
+            <button type="button" class="boton principal" id="generarProgramacion">
+                Generar programación
+            </button>
+        </div>
+    </section>
+</main>
+
+<div class="modal oculto" id="modalResultado">
+    <div class="modal-fondo" id="cerrarFondoResultado"></div>
+
+    <section class="modal-panel resultado-modal">
+        <div class="modal-cabecera">
+            <div>
+                <span class="eyebrow">PROGRAMACIÓN SEMANAL</span>
+                <h2 id="tituloSemanaResultado">Semana seleccionada</h2>
+            </div>
+
+            <button type="button" class="cerrar-modal" id="cerrarResultado">×</button>
+        </div>
+
+        <div class="barra-acciones">
+            <button type="button" class="boton secundario" id="modificarProgramacion">✏ Modificar</button>
+            <button type="button" class="boton secundario oculto" id="guardarCambios">✓ Confirmar</button>
+            <button type="button" class="boton secundario" id="copiarProgramacion">📋 Copiar</button>
+            <button type="button" class="boton secundario" id="enviarCorreo">✉ Correo</button>
+
+            <button type="button" class="boton alerta" id="abrirMayores">
+                ⚠ Mayores
+                <span id="resumenMayoresTexto"></span>
+            </button>
+        </div>
+
+        <div class="tabla-contenedor">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Máquina</th>
+                        <th>Día</th>
+                        <th>Tiempo</th>
+                        <th>Frecuencia</th>
+                    </tr>
+                </thead>
+                <tbody id="cuerpoProgramacion"></tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<div class="modal oculto" id="modalMayores">
+    <div class="modal-fondo" id="cerrarFondoMayores"></div>
+
+    <section class="modal-panel mayores-modal">
+        <div class="modal-cabecera">
+            <div>
+                <span class="eyebrow">MANTENIMIENTOS MAYORES</span>
+                <h2>Seleccionar máquinas</h2>
+                <p>Seleccione una sola máquina. Esta ocupará todos los días elegidos de la semana y reemplazará la programación de rutina.</p>
+            </div>
+
+            <button type="button" class="cerrar-modal" id="cerrarMayores">×</button>
+        </div>
+
+        <div id="listaMayores" class="lista-mayores"></div>
+
+        <div class="acciones-mayores">
+            <button type="button" class="boton principal" id="agregarMayores">
+                Programar mantenimiento mayor
+            </button>
+        </div>
+    </section>
+</div>
+
+<script id="datos-programacion" type="application/json">
+{
+    "festivos": {{ festivos | tojson }},
+    "mayores": {{ mayores | tojson }},
+    "fecha_hoy": {{ fecha_hoy | tojson }},
+    "resumen_mayores": {{ resumen_mayores | tojson }}
+}
+</script>
+
+<script>
+"use strict";
+
+const DATOS_PROGRAMACION = JSON.parse(
+    document.getElementById("datos-programacion").textContent
+);
+
+const FESTIVOS = DATOS_PROGRAMACION.festivos;
+const MAYORES = DATOS_PROGRAMACION.mayores;
+const FECHA_HOY = DATOS_PROGRAMACION.fecha_hoy;
+const RESUMEN_MAYORES = DATOS_PROGRAMACION.resumen_mayores;
+
+const calendario = document.getElementById("calendario");
+const tituloMes = document.getElementById("tituloMes");
+const fechaHoyTexto = document.getElementById("fechaHoyTexto");
+const semanaSeleccionada = document.getElementById("semanaSeleccionada");
+const diasSeleccionados = document.getElementById("diasSeleccionados");
+const mesAnterior = document.getElementById("mesAnterior");
+const mesSiguiente = document.getElementById("mesSiguiente");
+const limpiarSemana = document.getElementById("limpiarSemana");
+const generarProgramacion = document.getElementById("generarProgramacion");
+
+const modalResultado = document.getElementById("modalResultado");
+const cerrarResultado = document.getElementById("cerrarResultado");
+const cerrarFondoResultado = document.getElementById("cerrarFondoResultado");
+const tituloSemanaResultado = document.getElementById("tituloSemanaResultado");
+const cuerpoProgramacion = document.getElementById("cuerpoProgramacion");
+const modificarProgramacion = document.getElementById("modificarProgramacion");
+const guardarCambios = document.getElementById("guardarCambios");
+const copiarProgramacion = document.getElementById("copiarProgramacion");
+const enviarCorreo = document.getElementById("enviarCorreo");
+const abrirMayores = document.getElementById("abrirMayores");
+const resumenMayoresTexto = document.getElementById("resumenMayoresTexto");
+
+const modalMayores = document.getElementById("modalMayores");
+const cerrarMayores = document.getElementById("cerrarMayores");
+const cerrarFondoMayores = document.getElementById("cerrarFondoMayores");
+const listaMayores = document.getElementById("listaMayores");
+const agregarMayores = document.getElementById("agregarMayores");
+
+const nombresMeses = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+];
+
+const nombresDias = [
+    "Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"
+];
+
+let fechaVista = new Date(FECHA_HOY + "T12:00:00");
+fechaVista = new Date(fechaVista.getFullYear(), fechaVista.getMonth(), 1);
+
+let semanaActiva = null;
+let seleccionadas = new Set();
+let arrastrando = false;
+let valorArrastre = true;
+let programacionActual = [];
+let diasDisponibles = [];
+let modoEdicion = false;
+
+function isoLocal(fecha) {
+    const anio = fecha.getFullYear();
+    const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+    const dia = String(fecha.getDate()).padStart(2, "0");
+    return anio + "-" + mes + "-" + dia;
+}
+
+function fechaDesdeIso(iso) {
+    return new Date(iso + "T12:00:00");
+}
+
+function inicioSemana(fecha) {
+    const copia = new Date(fecha);
+    let desplazamiento = copia.getDay() - 1;
+    if (desplazamiento < 0) desplazamiento = 6;
+    copia.setDate(copia.getDate() - desplazamiento);
+    copia.setHours(12, 0, 0, 0);
+    return copia;
+}
+
+function finSemana(fecha) {
+    const lunes = inicioSemana(fecha);
+    const domingo = new Date(lunes);
+    domingo.setDate(lunes.getDate() + 6);
+    return domingo;
+}
+
+function mismaSemana(fecha, referencia) {
+    return isoLocal(inicioSemana(fecha)) === isoLocal(inicioSemana(referencia));
+}
+
+function esFinSemana(fecha) {
+    return fecha.getDay() === 0 || fecha.getDay() === 6;
+}
+
+function esFestivo(fecha) {
+    return Boolean(FESTIVOS[isoLocal(fecha)]);
+}
+
+function esHabil(fecha) {
+    return !esFinSemana(fecha) && !esFestivo(fecha);
+}
+
+function fechaLarga(fecha) {
+    return fecha.toLocaleDateString(
+        "es-CO",
+        { weekday: "long", day: "2-digit", month: "long", year: "numeric" }
+    );
+}
+
+function formatoCorto(fecha) {
+    return fecha.toLocaleDateString(
+        "es-CO",
+        { day: "2-digit", month: "short" }
+    );
+}
+
+function actualizarInfoSemana() {
+    if (!semanaActiva) {
+        semanaSeleccionada.textContent = "Seleccione un día para definir la semana.";
+        diasSeleccionados.textContent = "0 días seleccionados";
+        return;
+    }
+
+    const lunes = inicioSemana(semanaActiva);
+    const domingo = finSemana(semanaActiva);
+
+    semanaSeleccionada.textContent =
+        "Semana: " + formatoCorto(lunes) + " - " + formatoCorto(domingo);
+
+    diasSeleccionados.textContent =
+        seleccionadas.size +
+        (seleccionadas.size === 1 ? " día seleccionado" : " días seleccionados");
+}
+
+function seleccionarFecha(iso, seleccionar) {
+    const fecha = fechaDesdeIso(iso);
+
+    if (!semanaActiva) {
+        semanaActiva = inicioSemana(fecha);
+    }
+
+    if (!mismaSemana(fecha, semanaActiva)) return;
+
+    if (seleccionar) {
+        seleccionadas.add(iso);
+    } else {
+        seleccionadas.delete(iso);
+    }
+
+    const celda = calendario.querySelector('[data-fecha="' + iso + '"]');
+
+    if (celda) {
+        celda.classList.toggle("seleccionado", seleccionar);
+    }
+
+    actualizarInfoSemana();
+    actualizarBloqueosSemana();
+}
+
+function actualizarBloqueosSemana() {
+    const celdas = calendario.querySelectorAll(".dia-calendario[data-fecha]");
+
+    celdas.forEach(function (celda) {
+        const fecha = fechaDesdeIso(celda.dataset.fecha);
+
+        const bloqueadaPorSemana =
+            semanaActiva && !mismaSemana(fecha, semanaActiva);
+
+        celda.classList.toggle(
+            "fuera-semana",
+            Boolean(bloqueadaPorSemana)
+        );
+
+        celda.disabled =
+            !esHabil(fecha) || Boolean(bloqueadaPorSemana);
+    });
+}
+
+function dibujarCalendario() {
+    calendario.innerHTML = "";
+
+    const anio = fechaVista.getFullYear();
+    const mes = fechaVista.getMonth();
+
+    tituloMes.textContent = nombresMeses[mes] + " " + anio;
+
+    const primerDia = new Date(anio, mes, 1);
+    const ultimoDia = new Date(anio, mes + 1, 0);
+
+    let desplazamiento = primerDia.getDay() - 1;
+    if (desplazamiento < 0) desplazamiento = 6;
+
+    for (let i = 0; i < desplazamiento; i++) {
+        const vacio = document.createElement("div");
+        vacio.className = "dia-calendario vacio";
+        calendario.appendChild(vacio);
+    }
+
+    for (let dia = 1; dia <= ultimoDia.getDate(); dia++) {
+        const fecha = new Date(anio, mes, dia);
+        const iso = isoLocal(fecha);
+
+        const celda = document.createElement("button");
+        celda.type = "button";
+        celda.className = "dia-calendario";
+        celda.dataset.fecha = iso;
+
+        if (esFinSemana(fecha)) celda.classList.add("fin-semana");
+        if (esFestivo(fecha)) celda.classList.add("festivo");
+        if (seleccionadas.has(iso)) celda.classList.add("seleccionado");
+        if (iso === FECHA_HOY) celda.classList.add("hoy");
+
+        const numero = document.createElement("span");
+        numero.className = "numero-dia";
+        numero.textContent = dia;
+        celda.appendChild(numero);
+
+        const nombreFestivo = FESTIVOS[iso];
+
+        if (nombreFestivo) {
+            const indicador = document.createElement("small");
+            indicador.textContent = nombreFestivo;
+            celda.appendChild(indicador);
+        }
+
+        celda.addEventListener("mousedown", function (evento) {
+            if (evento.button !== 0 || this.disabled) return;
+
+            evento.preventDefault();
+            arrastrando = true;
+            valorArrastre = !seleccionadas.has(this.dataset.fecha);
+
+            seleccionarFecha(
+                this.dataset.fecha,
+                valorArrastre
+            );
+        });
+
+        celda.addEventListener("mouseenter", function () {
+            if (!arrastrando || this.disabled) return;
+
+            seleccionarFecha(
+                this.dataset.fecha,
+                valorArrastre
+            );
+        });
+
+        celda.addEventListener("touchend", function (evento) {
+            if (this.disabled) return;
+
+            evento.preventDefault();
+
+            seleccionarFecha(
+                this.dataset.fecha,
+                !seleccionadas.has(this.dataset.fecha)
+            );
+        });
+
+        calendario.appendChild(celda);
+    }
+
+    actualizarBloqueosSemana();
+}
+
+document.addEventListener("mouseup", function () {
+    arrastrando = false;
+});
+
+mesAnterior.addEventListener("click", function () {
+    fechaVista = new Date(
+        fechaVista.getFullYear(),
+        fechaVista.getMonth() - 1,
+        1
+    );
+
+    dibujarCalendario();
+});
+
+mesSiguiente.addEventListener("click", function () {
+    fechaVista = new Date(
+        fechaVista.getFullYear(),
+        fechaVista.getMonth() + 1,
+        1
+    );
+
+    dibujarCalendario();
+});
+
+limpiarSemana.addEventListener("click", function () {
+    semanaActiva = null;
+    seleccionadas.clear();
+    dibujarCalendario();
+    actualizarInfoSemana();
+});
+
+function formatoDia(iso) {
+    const fecha = fechaDesdeIso(iso);
+
+    return nombresDias[fecha.getDay()] + " " +
+        fecha.toLocaleDateString("es-CO", { day: "2-digit", month: "2-digit" });
+}
+
+function opcionesDias(seleccionado) {
+    return diasDisponibles
+        .map(function (iso) {
+            return (
+                '<option value="' + iso + '" ' +
+                (iso === seleccionado ? "selected" : "") +
+                ">" +
+                formatoDia(iso) +
+                "</option>"
+            );
+        })
+        .join("");
+}
+
+function renderProgramacion() {
+    cuerpoProgramacion.innerHTML = "";
+
+    if (programacionActual.length === 0) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+
+        td.colSpan = 4;
+        td.className = "sin-resultados";
+        td.textContent =
+            "No hay mantenimientos de rutina vencidos o próximos para los días seleccionados.";
+
+        tr.appendChild(td);
+        cuerpoProgramacion.appendChild(tr);
+        return;
+    }
+
+    programacionActual.forEach(function (fila, indice) {
+        const tr = document.createElement("tr");
+
+        if (fila.tipo === "mayor") {
+            tr.classList.add("fila-mayor");
+        }
+
+        const tdMaquina = document.createElement("td");
+
+        tdMaquina.innerHTML =
+            "<strong>" + fila.maquina + "</strong>" +
+            (
+                fila.tipo === "mayor"
+                    ? '<small class="etiqueta-mayor">Mayor</small>'
+                    : ""
+            );
+
+        const tdDia = document.createElement("td");
+
+        if (modoEdicion) {
+            const select = document.createElement("select");
+
+            select.className = "selector-dia";
+            select.dataset.indice = indice;
+            select.innerHTML = opcionesDias(fila.dia);
+
+            select.addEventListener("change", function () {
+                programacionActual[
+                    Number(this.dataset.indice)
+                ].dia = this.value;
+            });
+
+            tdDia.appendChild(select);
+        } else {
+            tdDia.textContent = formatoDia(fila.dia);
+        }
+
+        const tdTiempo = document.createElement("td");
+        tdTiempo.textContent = fila.tiempo;
+
+        const tdFrecuencia = document.createElement("td");
+        tdFrecuencia.textContent = fila.frecuencia;
+
+        tr.appendChild(tdMaquina);
+        tr.appendChild(tdDia);
+        tr.appendChild(tdTiempo);
+        tr.appendChild(tdFrecuencia);
+
+        cuerpoProgramacion.appendChild(tr);
+    });
+}
+
+async function generar() {
+    const fechas = Array.from(seleccionadas).sort();
+
+    if (fechas.length === 0) {
+        alert("Seleccione al menos un día.");
+        return;
+    }
+
+    const respuesta = await fetch(
+        "{{ url_for('programacion.generar_programacion') }}",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ fechas: fechas })
+        }
+    );
+
+    const datos = await respuesta.json();
+
+    if (!respuesta.ok) {
+        alert(
+            datos.mensaje ||
+            "No fue posible generar la programación."
+        );
+        return;
+    }
+
+    programacionActual = datos.programacion;
+    diasDisponibles = datos.dias_disponibles;
+    modoEdicion = false;
+
+    renderProgramacion();
+
+    const lunes = inicioSemana(semanaActiva);
+    const domingo = finSemana(semanaActiva);
+
+    tituloSemanaResultado.textContent =
+        "Semana " + formatoCorto(lunes) + " - " + formatoCorto(domingo);
+
+    modalResultado.classList.remove("oculto");
+}
+
+generarProgramacion.addEventListener("click", generar);
+
+function cerrarModalResultado() {
+    modalResultado.classList.add("oculto");
+}
+
+cerrarResultado.addEventListener("click", cerrarModalResultado);
+cerrarFondoResultado.addEventListener("click", cerrarModalResultado);
+
+modificarProgramacion.addEventListener("click", function () {
+    if (programacionActual.length === 0) return;
+
+    modoEdicion = true;
+    modificarProgramacion.classList.add("oculto");
+    guardarCambios.classList.remove("oculto");
+
+    renderProgramacion();
+});
+
+guardarCambios.addEventListener("click", function () {
+    modoEdicion = false;
+    guardarCambios.classList.add("oculto");
+    modificarProgramacion.classList.remove("oculto");
+
+    programacionActual.sort(function (a, b) {
+        return (
+            a.dia.localeCompare(b.dia) ||
+            a.maquina.localeCompare(b.maquina)
+        );
+    });
+
+    renderProgramacion();
+});
+
+
+function obtenerNumeroSemana(iso) {
+    const fecha = new Date(iso + "T12:00:00");
+    const copia = new Date(Date.UTC(
+        fecha.getFullYear(),
+        fecha.getMonth(),
+        fecha.getDate()
+    ));
+
+    const dia = copia.getUTCDay() || 7;
+    copia.setUTCDate(copia.getUTCDate() + 4 - dia);
+
+    const inicioAnio = new Date(
+        Date.UTC(copia.getUTCFullYear(), 0, 1)
+    );
+
+    return Math.ceil(
+        (((copia - inicioAnio) / 86400000) + 1) / 7
+    );
+}
+
+function textoProgramacion() {
+    const lineas = [
+        "PROGRAMACIÓN SEMANAL",
+        "",
+        "Máquina\tDía\tTiempo\tFrecuencia"
+    ];
+
+    programacionActual.forEach(function (fila) {
+        lineas.push(
+            fila.maquina + "\t" +
+            formatoDia(fila.dia) + "\t" +
+            fila.tiempo + "\t" +
+            fila.frecuencia
+        );
+    });
+
+    return lineas.join("\n");
+}
+
+copiarProgramacion.addEventListener("click", async function () {
+    if (programacionActual.length === 0) return;
+
+    const texto = textoProgramacion();
+
+    try {
+        await navigator.clipboard.writeText(texto);
+    } catch (error) {
+        const area = document.createElement("textarea");
+
+        area.value = texto;
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand("copy");
+        document.body.removeChild(area);
+    }
+
+    const original = copiarProgramacion.textContent;
+    copiarProgramacion.textContent = "✓ Copiado";
+
+    setTimeout(function () {
+        copiarProgramacion.textContent = original;
+    }, 1400);
+});
+
+function tablaCorreoHTML() {
+    const primeraFecha =
+        Array.from(seleccionadas).sort()[0];
+
+    const numeroSemana =
+        obtenerNumeroSemana(primeraFecha);
+
+    const filas =
+        programacionActual.map(
+            function (fila, indice) {
+
+                const esMayor =
+                    fila.tipo === "mayor";
+
+                const fondoFila =
+                    indice % 2 === 0
+                    ? "#FFFFFF"
+                    : "#F8FAFC";
+
+                const etiquetaMayor =
+                    esMayor
+                    ? (
+                        '<span style="display:inline-block;margin-left:6px;'
+                        + 'padding:2px 7px;border-radius:999px;'
+                        + 'background:#EAF2FB;color:#315B7D;'
+                        + 'font-size:10px;font-weight:700;">Mayor</span>'
+                    )
+                    : "";
+
+                return (
+                    '<tr style="background:' + fondoFila + ';">'
+                    + '<td style="padding:11px 13px;border:1px solid #D9E2EC;'
+                    + 'font-family:Arial,sans-serif;font-size:13px;color:#172033;">'
+                    + '<strong>' + fila.maquina + '</strong>' + etiquetaMayor + '</td>'
+                    + '<td style="padding:11px 13px;border:1px solid #D9E2EC;'
+                    + 'font-family:Arial,sans-serif;font-size:13px;color:#172033;">'
+                    + formatoDia(fila.dia) + '</td>'
+                    + '<td style="padding:11px 13px;border:1px solid #D9E2EC;'
+                    + 'font-family:Arial,sans-serif;font-size:13px;color:#172033;text-align:center;">'
+                    + fila.tiempo + '</td>'
+                    + '<td style="padding:11px 13px;border:1px solid #D9E2EC;'
+                    + 'font-family:Arial,sans-serif;font-size:13px;color:#172033;">'
+                    + fila.frecuencia + '</td>'
+                    + '</tr>'
+                );
+            }
+        ).join("");
+
+    return (
+
+    '<div style="'
+    + 'font-family:Arial,Helvetica,sans-serif;'
+    + 'font-size:13px;'
+    + 'color:#172033;'
+    + 'line-height:1.6;'
+    + '">'
+
+
+    + '<p style="margin:0 0 12px 0;">'
+    + 'Reciban un cordial saludo.'
+    + '</p>'
+
+    + '<p style="margin:0 0 14px 0;">'
+    + 'Por medio del presente, remito la '
+    + '<p style="margin:0 0 14px 0;">'
+    + 'programación de mantenimientos preventivos correspondiente a la semana '
+    + numeroSemana
+    + ' del Área de Tapa Plástica</strong>.'
+    + '</p>'
+
+    + '<p style="margin:0 0 18px 0;">'
+    + 'A continuación, se relacionan las actividades programadas:'
+    + '</p>'
+
+    + '<table '
+    + 'cellpadding="0" '
+    + 'cellspacing="0" '
+    + 'style="'
+    + 'width:100%;'
+    + 'border-collapse:collapse;'
+    + 'border:1px solid #D9E2EC;'
+    + 'border-radius:8px;'
+    + 'overflow:hidden;'
+    + 'font-family:Arial,Helvetica,sans-serif;'
+    + '">'
+
+    + '<thead>'
+
+    + '<tr style="background:#DCEAF7;">'
+
+    + '<th style="'
+    + 'padding:12px;'
+    + 'border:1px solid #C8D6E5;'
+    + 'font-size:11px;'
+    + 'font-weight:bold;'
+    + 'color:#1F3B57;'
+    + 'text-align:left;'
+    + '">'
+    + 'MÁQUINA'
+    + '</th>'
+
+    + '<th style="'
+    + 'padding:12px;'
+    + 'border:1px solid #C8D6E5;'
+    + 'font-size:11px;'
+    + 'font-weight:bold;'
+    + 'color:#1F3B57;'
+    + 'text-align:left;'
+    + '">'
+    + 'DÍA PROGRAMADO'
+    + '</th>'
+
+    + '<th style="'
+    + 'padding:12px;'
+    + 'border:1px solid #C8D6E5;'
+    + 'font-size:11px;'
+    + 'font-weight:bold;'
+    + 'color:#1F3B57;'
+    + 'text-align:center;'
+    + '">'
+    + 'TIEMPO'
+    + '</th>'
+
+    + '<th style="'
+    + 'padding:12px;'
+    + 'border:1px solid #C8D6E5;'
+    + 'font-size:11px;'
+    + 'font-weight:bold;'
+    + 'color:#1F3B57;'
+    + 'text-align:left;'
+    + '">'
+    + 'FRECUENCIA'
+    + '</th>'
+
+    + '</tr>'
+
+    + '</thead>'
+
+    + '<tbody>'
+
+    + filas
+
+    + '</tbody>'
+
+    + '</table>'
+
+    + '<br><br>'
+
+    + '<p style="'
+    + 'margin-top:25px;'
+    + 'margin-bottom:10px;'
+    + 'font-size:13px;'
+    + 'color:#172033;'
+    + '">'
+
+    + '<strong><em>Atentamente,</em></strong>'
+
+    + '</p>'
+
+    + '<p style="'
+    + 'margin:0;'
+    + 'font-size:13px;'
+    + 'line-height:1.8;'
+    + 'color:#172033;'
+    + '">'
+
+
+    + '<strong><em>Diego Eduardo Rojas Mora</em></strong><br>'
+
+    + '<strong><em>Tecnico mantenimiento</em></strong>'
+
+    + '</p>'
+
+    + '</div>'
+
+);
+}
+
+
+async function copiarTablaCorreo() {
+    const htmlCorreo =
+        tablaCorreoHTML();
+
+    const textoPlano =
+        textoProgramacion();
+
+    if (
+        navigator.clipboard
+        &&
+        window.ClipboardItem
+    ) {
+        try {
+            const item =
+                new ClipboardItem(
+                    {
+                        "text/html":
+                            new Blob(
+                                [htmlCorreo],
+                                {
+                                    type:
+                                        "text/html"
+                                }
+                            ),
+
+                        "text/plain":
+                            new Blob(
+                                [textoPlano],
+                                {
+                                    type:
+                                        "text/plain"
+                                }
+                            )
+                    }
+                );
+
+            await navigator.clipboard.write(
+                [item]
+            );
+
+            return true;
+
+        } catch (error) {
+            console.warn(
+                "No fue posible copiar HTML enriquecido.",
+                error
+            );
+        }
+    }
+
+    try {
+        await navigator.clipboard.writeText(
+            textoPlano
+        );
+
+        return false;
+
+    } catch (error) {
+        return false;
+    }
+}
+
+
+enviarCorreo.addEventListener(
+    "click",
+    async function () {
+
+        if (
+            programacionActual.length === 0
+        ) {
+            alert(
+                "Primero genere una programación."
+            );
+
+            return;
+        }
+
+        const copiadoHtml =
+            await copiarTablaCorreo();
+
+        const asunto =
+            "Programación de mantenimientos preventivos – Semana "
+            + obtenerNumeroSemana(Array.from(seleccionadas).sort()[0]);
+
+        const outlookUrl =
+            "https://outlook.office.com/mail/deeplink/compose"
+            + "?subject="
+            + encodeURIComponent(
+                asunto
+            );
+
+        const ventana =
+            window.open(
+                outlookUrl,
+                "_blank"
+            );
+
+        if (
+            !ventana
+            ||
+            ventana.closed
+            ||
+            typeof ventana.closed ===
+                "undefined"
+        ) {
+            window.location.href =
+                "mailto:"
+                + "?subject="
+                + encodeURIComponent(
+                    asunto
+                );
+        }
+
+        if (copiadoHtml) {
+            alert(
+                "La tabla profesional quedó copiada. "
+                + "En el cuerpo del correo de Outlook presione Ctrl + V "
+                + "para pegarla conservando el formato."
+            );
+        } else {
+            alert(
+                "La programación quedó copiada. "
+                + "Pegue el contenido en el correo con Ctrl + V."
+            );
+        }
+
+    }
+);
+
+function renderMayores() {
+    listaMayores.innerHTML = "";
+
+    if (MAYORES.length === 0) {
+        listaMayores.innerHTML =
+            '<div class="sin-mayores">' +
+            "No hay mantenimientos mayores vencidos o próximos." +
+            "</div>";
+
+        return;
+    }
+
+    MAYORES.forEach(function (item) {
+        const id =
+            item.maquina_id + "|" +
+            item.tipo + "|" +
+            item.frecuencia;
+
+        let detalle = "";
+
+        if (typeof item.horas_faltantes !== "undefined") {
+            detalle =
+                item.horas_faltantes <= 0
+                    ? "Horas cumplidas"
+                    : "Faltan " + item.horas_faltantes + " h";
+        } else {
+            detalle =
+                item.dias_restantes < 0
+                    ? "Vencido hace " + Math.abs(item.dias_restantes) + " días"
+                    : "Faltan " + item.dias_restantes + " días";
+        }
+
+        const tarjeta = document.createElement("label");
+
+        tarjeta.className =
+            "mayor-card " + item.estado;
+
+        tarjeta.innerHTML =
+            '<input type="radio" name="mantenimiento_mayor" class="check-mayor" value="' + id + '">' +
+            '<div class="mayor-info">' +
+                '<div class="mayor-titulo">' +
+                    '<strong>' + item.maquina + '</strong>' +
+                    '<span class="badge ' + item.estado + '">' +
+                        (item.estado === "vencido" ? "Vencido" : "Próximo") +
+                    '</span>' +
+                '</div>' +
+                '<span>' + item.tipo + '</span>' +
+                '<small>' + item.frecuencia + " · " + detalle + '</small>' +
+            '</div>' +
+            '<span class="agregar-texto">+ Agregar</span>';
+
+        listaMayores.appendChild(tarjeta);
+    });
+}
+
+function seleccionMayores() {
+    return Array.from(
+        document.querySelectorAll(".check-mayor:checked")
+    ).map(function (input) {
+        return input.value;
+    });
+}
+
+function actualizarMayoresVisual() {
+    document.querySelectorAll(".mayor-card").forEach(function (tarjeta) {
+        const check = tarjeta.querySelector(".check-mayor");
+        const texto = tarjeta.querySelector(".agregar-texto");
+        const activo = check && check.checked;
+
+        tarjeta.classList.toggle("seleccionado", activo);
+
+        if (texto) {
+            texto.textContent =
+                activo ? "✓ Seleccionado" : "+ Agregar";
+        }
+    });
+}
+
+listaMayores.addEventListener(
+    "change",
+    actualizarMayoresVisual
+);
+
+abrirMayores.addEventListener("click", function () {
+    modalMayores.classList.remove("oculto");
+});
+
+function cerrarModalMayores() {
+    modalMayores.classList.add("oculto");
+}
+
+cerrarMayores.addEventListener("click", cerrarModalMayores);
+cerrarFondoMayores.addEventListener("click", cerrarModalMayores);
+
+agregarMayores.addEventListener("click", async function () {
+    const mayores = seleccionMayores();
+
+    if (mayores.length === 0) {
+        alert("Seleccione al menos un mantenimiento mayor.");
+        return;
+    }
+
+    const fechas = Array.from(seleccionadas).sort();
+
+    const respuesta = await fetch(
+        "{{ url_for('programacion.agregar_mayores') }}",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                fechas: fechas,
+                mayores: mayores
+            })
+        }
+    );
+
+    const datos = await respuesta.json();
+
+    if (!respuesta.ok) {
+        alert(
+            datos.mensaje ||
+            "No fue posible agregar los mantenimientos mayores."
+        );
+        return;
+    }
+
+    programacionActual = datos.programacion;
+
+    programacionActual.sort(function (a, b) {
+        return (
+            a.dia.localeCompare(b.dia) ||
+            a.maquina.localeCompare(b.maquina)
+        );
+    });
+
+    renderProgramacion();
+    cerrarModalMayores();
+});
+
+const hoy = fechaDesdeIso(FECHA_HOY);
+
+fechaHoyTexto.textContent = fechaLarga(hoy);
+
+resumenMayoresTexto.textContent =
+    RESUMEN_MAYORES.vencidos +
+    " vencidos · " +
+    RESUMEN_MAYORES.proximos +
+    " próximos";
+
+if (RESUMEN_MAYORES.total === 0) {
+    abrirMayores.classList.add("sin-alertas");
+}
+
+renderMayores();
+dibujarCalendario();
+actualizarInfoSemana();
+
+</script>
+
+</body>
+</html>
+
