@@ -31,28 +31,7 @@ tiempos_perdidos_bp = Blueprint(
     url_prefix="/tiempos-perdidos",
 )
 
-
-def _openpyxl():
-    """
-    Importación diferida de openpyxl.
-
-    Esto permite que el CMMS completo inicie aunque openpyxl todavía no
-    esté instalado. La librería solo se exige al procesar un Excel.
-    """
-    try:
-        from openpyxl import load_workbook
-        from openpyxl.comments import Comment
-        from openpyxl.utils.datetime import from_excel
-    except ModuleNotFoundError as error:
-        raise RuntimeError(
-            "Falta instalar openpyxl. Ejecute: "
-            "python -m pip install -r requirements.txt"
-        ) from error
-
-    return load_workbook, Comment, from_excel
-
 EXTENSIONES_PERMITIDAS = {".xlsx", ".xlsm"}
-
 
 CLASES_ORDEN = {
     "PM01A": "correctivo",
@@ -70,148 +49,6 @@ HOJAS_DESTINO_TIEMPOS = {
     "cambio": "tiempos Cambios TP",
 }
 
-
-ALIAS_MAQUINAS = {
-    "CCM1": [
-        "TERMOCOMPRESORA SACMI Nº1",
-        "TERMOCOMPRESORA SACMI Nº 1",
-        "TERMOCOMPRESORA SACMI N°1",
-        "TERMOCOMPRESORA SACMI N° 1",
-        "TERMOCOMPRESORA SACMI NO 1",
-        "TERMOCOMPRESORA SACMI 1",
-        "CCM1",
-        "CCM 1",
-        "CCM01",
-        "CCM 01",
-    ],
-
-    "CCM2": [
-        "TERMOCOMPRESORA SACMI Nº2",
-        "TERMOCOMPRESORA SACMI Nº 2",
-        "TERMOCOMPRESORA SACMI N°2",
-        "TERMOCOMPRESORA SACMI N° 2",
-        "TERMOCOMPRESORA SACMI NO 2",
-        "TERMOCOMPRESORA SACMI 2",
-        "CCM2",
-        "CCM 2",
-        "CCM02",
-        "CCM 02",
-    ],
-
-    "CCM3": [
-        "TERMOCOMPRESORA SACMI Nº3",
-        "TERMOCOMPRESORA SACMI Nº 3",
-        "TERMOCOMPRESORA SACMI N°3",
-        "TERMOCOMPRESORA SACMI N° 3",
-        "TERMOCOMPRESORA SACMI NO 3",
-        "TERMOCOMPRESORA SACMI 3",
-        "CCM3",
-        "CCM 3",
-        "CCM03",
-        "CCM 03",
-    ],
-
-    "CCM4": [
-        "TERMOCOMPRESORA SACMI Nº4",
-        "TERMOCOMPRESORA SACMI Nº 4",
-        "TERMOCOMPRESORA SACMI N°4",
-        "TERMOCOMPRESORA SACMI N° 4",
-        "TERMOCOMPRESORA SACMI NO 4",
-        "TERMOCOMPRESORA SACMI 4",
-        "CCM4",
-        "CCM 4",
-        "CCM04",
-        "CCM 04",
-        "CCM64-1",
-        "CCM 64-1",
-        "CCM64 - 1",
-        "CCM 64 - 1",
-    ],
-
-    "CCM5": [
-        "TERMOCOMPRESORA SACMI Nº5",
-        "TERMOCOMPRESORA SACMI Nº 5",
-        "TERMOCOMPRESORA SACMI N°5",
-        "TERMOCOMPRESORA SACMI N° 5",
-        "TERMOCOMPRESORA SACMI NO 5",
-        "TERMOCOMPRESORA SACMI 5",
-        "CCM5",
-        "CCM 5",
-        "CCM05",
-        "CCM 05",
-        "CCM64-2",
-        "CCM 64-2",
-        "CCM64 - 2",
-        "CCM 64 - 2",
-    ],
-
-    "CCM6": [
-        "TERMOCOMPRESORA SACMI Nº6",
-        "TERMOCOMPRESORA SACMI Nº 6",
-        "TERMOCOMPRESORA SACMI N°6",
-        "TERMOCOMPRESORA SACMI N° 6",
-        "TERMOCOMPRESORA SACMI NO 6",
-        "TERMOCOMPRESORA SACMI 6",
-        "CCM6",
-        "CCM 6",
-        "CCM06",
-        "CCM 06",
-    ],
-
-    "CCM7": [
-        "TERMOCOMPRESORA SACMI Nº7",
-        "TERMOCOMPRESORA SACMI Nº 7",
-        "TERMOCOMPRESORA SACMI N°7",
-        "TERMOCOMPRESORA SACMI N° 7",
-        "TERMOCOMPRESORA SACMI NO 7",
-        "TERMOCOMPRESORA SACMI 7",
-        "CCM7",
-        "CCM 7",
-        "CCM07",
-        "CCM 07",
-    ],
-
-    "CCM8": [
-        "TERMOCOMPRESORA SACMI Nº8",
-        "TERMOCOMPRESORA SACMI Nº 8",
-        "TERMOCOMPRESORA SACMI N°8",
-        "TERMOCOMPRESORA SACMI N° 8",
-        "TERMOCOMPRESORA SACMI NO 8",
-        "TERMOCOMPRESORA SACMI 8",
-        "CCM8",
-        "CCM 8",
-        "CCM08",
-        "CCM 08",
-    ],
-
-    "PMV2": [
-        "SACMI PMV N° 2",
-        "SACMI PMV Nº 2",
-        "SACMI PMV N°2",
-        "SACMI PMV Nº2",
-        "SACMI PMV NO 2",
-        "SACMI PMV 2",
-        "PMV2",
-        "PMV 2",
-        "PMV02",
-        "PMV 02",
-    ],
-
-    "PMV4": [
-        "SACMI PMV N° 4",
-        "SACMI PMV Nº 4",
-        "SACMI PMV N°4",
-        "SACMI PMV Nº4",
-        "SACMI PMV NO 4",
-        "SACMI PMV 4",
-        "PMV4",
-        "PMV 4",
-        "PMV04",
-        "PMV 04",
-    ],
-}
-
-
 ORDEN_MAQUINAS = [
     "CCM1",
     "CCM2",
@@ -225,10 +62,74 @@ ORDEN_MAQUINAS = [
     "PMV4",
 ]
 
+NOMBRES_MAQUINA_FORMATO = {
+    "CCM1": "CCM 01",
+    "CCM2": "CCM 02",
+    "CCM3": "CCM 03",
+    "CCM4": "CCM 04",
+    "CCM5": "CCM 05",
+    "CCM6": "CCM 06",
+    "CCM7": "CCM 07",
+    "CCM8": "CCM 08",
+    "PMV2": "PMV 02",
+    "PMV4": "PMV 04",
+}
+
+HOJAS_TRABAJOS = {
+    "CCM1": "Trabajos Realizados CCM1",
+    "CCM2": "Trabajos Realizados CCM2",
+    "CCM3": "Trabajos Realizados CCM3",
+    "CCM4": "Trabajos Realizados CCM64-1",
+    "CCM5": "Trabajos Realizados CCM64-2",
+    "CCM6": "Trabajos Realizados CCM 06",
+    "CCM7": "Trabajos Realizados CCM 07",
+    "CCM8": "Trabajos Realizados CCM 08",
+    "PMV2": "Trabajos Realizados PMV 02",
+    "PMV4": "Trabajos Realizados PMV 04",
+}
+
+MESES_ES = {
+    1: "ENERO",
+    2: "FEBRERO",
+    3: "MARZO",
+    4: "ABRIL",
+    5: "MAYO",
+    6: "JUNIO",
+    7: "JULIO",
+    8: "AGOSTO",
+    9: "SEPTIEMBRE",
+    10: "OCTUBRE",
+    11: "NOVIEMBRE",
+    12: "DICIEMBRE",
+}
+
+MESES_TEXTO = {
+    "ENERO": 1,
+    "FEBRERO": 2,
+    "MARZO": 3,
+    "ABRIL": 4,
+    "MAYO": 5,
+    "JUNIO": 6,
+    "JULIO": 7,
+    "AGOSTO": 8,
+    "SEPTIEMBRE": 9,
+    "SETIEMBRE": 9,
+    "OCTUBRE": 10,
+    "NOVIEMBRE": 11,
+    "DICIEMBRE": 12,
+}
+
 ENCABEZADOS = {
     "dia": {
         "DIA",
         "FECHA",
+    },
+    "mes": {
+        "MES",
+    },
+    "anio": {
+        "ANO",
+        "ANIO",
     },
     "equipo": {
         "EQUIPO",
@@ -246,533 +147,164 @@ ENCABEZADOS = {
     "trabajo": {
         "TRABAJO REALIZADO",
     },
+    "tiempo": {
+        "TIEMPO PERDIDO MIN",
+        "TIEMPO PERDIDO MINUTOS",
+        "TIEMPO PERDIDO",
+    },
     "estado": {
         "ESTADO",
         "ESTADO TRABAJO",
         "ESTADO DE TRABAJO",
         "ESTADO DEL TRABAJO",
     },
-    "tiempo": {
-        "TIEMPO PERDIDO MIN",
-        "TIEMPO PERDIDO",
-        "TIEMPO PERDIDO MINUTOS",
-    },
 }
 
 
-def ruta_base() -> Path:
-    return Path(
-        current_app.root_path
+def _openpyxl():
+    try:
+        from openpyxl import load_workbook
+        from openpyxl.comments import Comment
+        from openpyxl.formula.translate import Translator
+    except ModuleNotFoundError as error:
+        raise RuntimeError(
+            "Falta instalar openpyxl. Ejecute: "
+            "python -m pip install -r requirements.txt"
+        ) from error
+
+    return load_workbook, Comment, Translator
+
+
+def normalizar(valor: Any) -> str:
+    if valor is None:
+        return ""
+
+    texto = str(valor).strip().upper()
+    texto = unicodedata.normalize("NFKD", texto)
+    texto = "".join(
+        caracter
+        for caracter in texto
+        if not unicodedata.combining(caracter)
     )
+    texto = texto.replace("º", " ").replace("°", " ")
+    texto = re.sub(r"[\r\n\t]+", " ", texto)
+    texto = re.sub(r"[^A-Z0-9]+", " ", texto)
+    return re.sub(r"\s+", " ", texto).strip()
+
+
+def ruta_base() -> Path:
+    return Path(current_app.root_path)
 
 
 def carpeta_uploads() -> Path:
     ruta = ruta_base() / "uploads_tiempos"
-    ruta.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
+    ruta.mkdir(parents=True, exist_ok=True)
     return ruta
 
 
 def carpeta_salidas() -> Path:
     ruta = ruta_base() / "salidas"
-    ruta.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
+    ruta.mkdir(parents=True, exist_ok=True)
     return ruta
 
 
 def carpeta_formatos() -> Path:
     ruta = ruta_base() / "formatos"
-    ruta.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
+    ruta.mkdir(parents=True, exist_ok=True)
     return ruta
 
 
-def normalizar(texto: Any) -> str:
-    if texto is None:
-        return ""
+def resolver_maquina(valor: Any) -> str | None:
+    texto = normalizar(valor)
 
-    valor = str(texto).strip().upper()
-
-    valor = unicodedata.normalize(
-        "NFKD",
-        valor,
-    )
-
-    valor = "".join(
-        caracter
-        for caracter in valor
-        if not unicodedata.combining(
-            caracter
-        )
-    )
-
-    valor = valor.replace(
-        "º",
-        " ",
-    ).replace(
-        "°",
-        " ",
-    ).replace(
-        "N°",
-        "N ",
-    )
-
-    valor = re.sub(
-        r"[\r\n\t]+",
-        " ",
-        valor,
-    )
-
-    valor = re.sub(
-        r"[^A-Z0-9]+",
-        " ",
-        valor,
-    )
-
-    valor = re.sub(
-        r"\s+",
-        " ",
-        valor,
-    ).strip()
-
-    return valor
-
-
-def construir_mapa_alias() -> dict[str, str]:
-    resultado = {}
-
-    for codigo, alias in ALIAS_MAQUINAS.items():
-        resultado[
-            normalizar(
-                codigo
-            )
-        ] = codigo
-
-        for nombre in alias:
-            resultado[
-                normalizar(
-                    nombre
-                )
-            ] = codigo
-
-    return resultado
-
-
-MAPA_ALIAS = construir_mapa_alias()
-
-
-def resolver_maquina(
-    nombre: Any,
-) -> str | None:
-    limpio = normalizar(
-        nombre
-    )
-
-    if not limpio:
+    if not texto:
         return None
 
-    if limpio in MAPA_ALIAS:
-        return MAPA_ALIAS[
-            limpio
-        ]
+    coincidencia = re.search(
+        r"\bTERMOCOMPRESORA\s+SACMI(?:\s+N|\s+NO)?\s*0?([1-8])\b",
+        texto,
+    )
+    if coincidencia:
+        return f"CCM{int(coincidencia.group(1))}"
 
     coincidencia = re.search(
-        r"\bTERMOCOMPRESORA\s+SACMI\s+(?:N|NO)?\s*0?([1-8])\b",
-        limpio,
+        r"\bSACMI\s+PMV(?:\s+N|\s+NO)?\s*0?(2|4)\b",
+        texto,
     )
-
     if coincidencia:
-        return (
-            "CCM"
-            + str(
-                int(
-                    coincidencia.group(
-                        1
-                    )
-                )
-            )
-        )
+        return f"PMV{int(coincidencia.group(1))}"
 
-    if re.search(
-        r"\bCCM\s*64\s*1\b",
-        limpio,
-    ):
+    if re.search(r"\bCCM\s*64\s*1\b", texto):
         return "CCM4"
 
-    if re.search(
-        r"\bCCM\s*64\s*2\b",
-        limpio,
-    ):
+    if re.search(r"\bCCM\s*64\s*2\b", texto):
         return "CCM5"
 
-    coincidencia = re.search(
-        r"\bCCM\s*0?([1-8])\b",
-        limpio,
-    )
-
+    coincidencia = re.search(r"\bCCM\s*0?([1-8])\b", texto)
     if coincidencia:
-        return (
-            "CCM"
-            + str(
-                int(
-                    coincidencia.group(
-                        1
-                    )
-                )
-            )
-        )
+        return f"CCM{int(coincidencia.group(1))}"
 
-    coincidencia = re.search(
-        r"\b(?:SACMI\s+)?PMV\s+(?:N|NO)?\s*0?(2|4)\b",
-        limpio,
-    )
-
+    coincidencia = re.search(r"\bPMV\s*0?(2|4)\b", texto)
     if coincidencia:
-        return (
-            "PMV"
-            + str(
-                int(
-                    coincidencia.group(
-                        1
-                    )
-                )
-            )
-        )
+        return f"PMV{int(coincidencia.group(1))}"
 
     return None
 
 
-def valor_minutos(
-    valor: Any,
-) -> int:
-    if valor in (
-        None,
-        "",
-    ):
+def clase_normalizada(valor: Any) -> str:
+    return normalizar(valor).replace(" ", "")
+
+
+def minutos_desde_valor(valor: Any) -> int:
+    if valor in (None, ""):
         return 0
 
-    if isinstance(
-        valor,
-        bool,
-    ):
+    if isinstance(valor, bool):
         return 0
 
-    if isinstance(
-        valor,
-        (
-            int,
-            float,
-        ),
-    ):
-        return int(
-            round(
-                float(valor)
-            )
-        )
+    if isinstance(valor, (int, float)):
+        return max(0, int(round(float(valor))))
 
-    texto = str(
-        valor
-    ).strip()
-
-    texto = texto.replace(
-        ".",
-        "",
-    ).replace(
-        ",",
-        ".",
-    )
+    texto = str(valor).strip().replace(",", ".")
 
     try:
-        return int(
-            round(
-                float(texto)
-            )
-        )
+        return max(0, int(round(float(texto))))
     except ValueError:
         return 0
 
 
-def dia_desde_valor(
-    valor: Any,
-) -> int | None:
-    _, _, from_excel = _openpyxl()
-    if valor is None:
+def mes_desde_valor(valor: Any) -> int | None:
+    if valor in (None, ""):
         return None
 
-    if isinstance(
-        valor,
-        datetime,
-    ):
-        return valor.day
+    if isinstance(valor, (int, float)):
+        numero = int(valor)
+        return numero if 1 <= numero <= 12 else None
 
-    if isinstance(
-        valor,
-        date,
-    ):
-        return valor.day
+    return MESES_TEXTO.get(normalizar(valor))
 
-    if isinstance(
-        valor,
-        (
-            int,
-            float,
-        ),
-    ):
-        numero = int(
-            valor
-        )
 
-        if 1 <= numero <= 31:
-            return numero
-
-        try:
-            fecha = from_excel(
-                valor
-            )
-
-            return fecha.day
-        except Exception:
-            return None
-
-    texto = str(
-        valor
-    ).strip()
-
-    if not texto:
+def anio_desde_valor(valor: Any) -> int | None:
+    try:
+        numero = int(valor)
+    except (TypeError, ValueError):
         return None
 
-    if texto.isdigit():
-        numero = int(
-            texto
-        )
-
-        if 1 <= numero <= 31:
-            return numero
-
-    for formato in (
-        "%d/%m/%Y",
-        "%Y-%m-%d",
-        "%d-%m-%Y",
-    ):
-        try:
-            return datetime.strptime(
-                texto,
-                formato,
-            ).day
-        except ValueError:
-            continue
-
-    return None
+    return numero if 2000 <= numero <= 2100 else None
 
 
-def mes_anio_desde_fila(
-    fila: tuple[Any, ...],
-    mapa: dict[str, int],
-) -> tuple[int | None, int | None]:
-    mes = None
-    anio = None
-
-    for indice, valor in enumerate(
-        fila,
-        start=1,
-    ):
-        pass
-
-    return mes, anio
-
-
-def buscar_hoja_plastica(
-    workbook,
-):
-    candidatas = []
-
-    for hoja in workbook.worksheets:
-        nombre = normalizar(
-            hoja.title
-        )
-
-        if (
-            "PLAST" in nombre
-            and "METAL" not in nombre
-        ):
-            candidatas.append(
-                hoja
-            )
-
-    if not candidatas:
-        raise ValueError(
-            "No se encontró una hoja de Plástica en el archivo de Entrega de Turno."
-        )
-
-    candidatas.sort(
-        key=lambda hoja:
-            hoja.max_row,
-        reverse=True,
-    )
-
-    return candidatas[0]
-
-
-def buscar_fila_encabezados(
-    hoja,
-) -> tuple[int, dict[str, int], dict[str, int]]:
-    for numero_fila in range(
-        1,
-        min(
-            hoja.max_row,
-            80,
-        )
-        + 1,
-    ):
-        mapa = {}
-        mapa_extra = {}
-
-        for celda in hoja[
-            numero_fila
-        ]:
-            encabezado = normalizar(
-                celda.value
-            )
-
-            if not encabezado:
-                continue
-
-            for campo, opciones in ENCABEZADOS.items():
-                if encabezado in opciones:
-                    mapa[
-                        campo
-                    ] = celda.column
-
-            if (
-                encabezado.startswith(
-                    "ESTADO DE TRABAJO"
-                )
-                or encabezado.startswith(
-                    "ESTADO TRABAJO"
-                )
-                or encabezado.startswith(
-                    "ESTADO DEL TRABAJO"
-                )
-            ):
-                mapa[
-                    "estado"
-                ] = celda.column
-
-            if encabezado == "MES":
-                mapa_extra[
-                    "mes"
-                ] = celda.column
-
-            if encabezado in {
-                "ANO",
-                "ANIO",
-            }:
-                mapa_extra[
-                    "anio"
-                ] = celda.column
-
-        obligatorios = {
-            "dia",
-            "equipo",
-            "clase",
-            "descripcion",
-            "trabajo",
-            "tiempo",
-        }
-
-        if obligatorios.issubset(
-            mapa.keys()
-        ):
-            return (
-                numero_fila,
-                mapa,
-                mapa_extra,
-            )
-
-    raise ValueError(
-        "No se encontró la fila de encabezados. "
-        "Se requieren: Día, Equipo, Clase de orden, "
-        "Descripción parada, Trabajo realizado y Tiempo perdido."
-    )
-
-
-
-MESES_ES = {
-    1: "ENERO",
-    2: "FEBRERO",
-    3: "MARZO",
-    4: "ABRIL",
-    5: "MAYO",
-    6: "JUNIO",
-    7: "JULIO",
-    8: "AGOSTO",
-    9: "SEPTIEMBRE",
-    10: "OCTUBRE",
-    11: "NOVIEMBRE",
-    12: "DICIEMBRE",
-}
-
-
-def detectar_mes_anio_nombre_archivo(
-    nombre_archivo: str,
-) -> tuple[int | None, int | None]:
-    texto = normalizar(
-        nombre_archivo
-    )
-
-    mes = None
-    anio = None
-
-    for numero, nombre in MESES_ES.items():
-        if nombre in texto:
-            mes = numero
-            break
-
-    coincidencia_anio = re.search(
-        r"\b(20\d{2})\b",
-        texto,
-    )
-
-    if coincidencia_anio:
-        anio = int(
-            coincidencia_anio.group(
-                1
-            )
-        )
-
-    return mes, anio
-
-
-def fecha_completa_desde_valor(
-    valor: Any,
+def fecha_desde_valores(
+    valor_dia: Any,
+    valor_mes: Any = None,
+    valor_anio: Any = None,
 ) -> date | None:
-    if valor is None:
-        return None
+    if isinstance(valor_dia, datetime):
+        return valor_dia.date()
 
-    if isinstance(
-        valor,
-        datetime,
-    ):
-        return valor.date()
+    if isinstance(valor_dia, date):
+        return valor_dia
 
-    if isinstance(
-        valor,
-        date,
-    ):
-        return valor
-
-    texto = str(
-        valor
-    ).strip()
-
-    if not texto:
-        return None
+    texto = str(valor_dia or "").strip()
 
     for formato in (
         "%d/%m/%Y",
@@ -781,569 +313,212 @@ def fecha_completa_desde_valor(
         "%d/%m/%y",
     ):
         try:
-            return datetime.strptime(
-                texto,
-                formato,
-            ).date()
+            return datetime.strptime(texto, formato).date()
         except ValueError:
-            continue
+            pass
 
-    return None
-
-
-def periodo_reporte_29_28(
-    mes: int,
-    anio: int,
-) -> list[date]:
-    if mes == 1:
-        mes_anterior = 12
-        anio_anterior = anio - 1
-    else:
-        mes_anterior = mes - 1
-        anio_anterior = anio
-
-    ultimo_dia_anterior = calendar.monthrange(
-        anio_anterior,
-        mes_anterior,
-    )[1]
-
-    dia_inicio = min(
-        29,
-        ultimo_dia_anterior,
-    )
-
-    inicio = date(
-        anio_anterior,
-        mes_anterior,
-        dia_inicio,
-    )
-
-    fin = date(
-        anio,
-        mes,
-        28,
-    )
-
-    fechas = []
-    actual = inicio
-
-    while actual <= fin:
-        fechas.append(
-            actual
-        )
-
-        actual += timedelta(
-            days=1
-        )
-
-    return fechas
-
-
-def determinar_periodo_reporte(
-    lectura: dict[str, Any],
-    nombre_archivo: str,
-) -> tuple[int, int, list[date]]:
-    mes = lectura.get(
-        "mes"
-    )
-
-    anio = lectura.get(
-        "anio"
-    )
-
-    if not mes or not anio:
-        mes_archivo, anio_archivo = (
-            detectar_mes_anio_nombre_archivo(
-                nombre_archivo
-            )
-        )
-
-        if not mes:
-            mes = mes_archivo
-
-        if not anio:
-            anio = anio_archivo
-
-    fechas_registro = [
-        registro.get(
-            "fecha"
-        )
-        for registro in lectura.get(
-            "registros",
-            []
-        )
-        if registro.get(
-            "fecha"
-        )
-    ]
-
-    if (
-        (not mes or not anio)
-        and fechas_registro
-    ):
-        fecha_maxima = max(
-            fechas_registro
-        )
-
-        if fecha_maxima.day <= 28:
-            mes = fecha_maxima.month
-            anio = fecha_maxima.year
-        else:
-            siguiente = (
-                fecha_maxima.replace(
-                    day=28
-                )
-                + timedelta(
-                    days=10
-                )
-            )
-
-            mes = siguiente.month
-            anio = siguiente.year
-
-    if not mes or not anio:
-        hoy = date.today()
-        mes = hoy.month
-        anio = hoy.year
-
-    fechas = periodo_reporte_29_28(
-        int(
-            mes
-        ),
-        int(
-            anio
-        ),
-    )
-
-    return (
-        int(
-            mes
-        ),
-        int(
-            anio
-        ),
-        fechas,
-    )
-
-
-def preparar_fechas_formato(
-    hoja,
-    fechas: list[date],
-    fila_inicio: int = 10,
-) -> dict[int, int]:
-    fila_total = None
-
-    for numero_fila in range(
-        fila_inicio,
-        hoja.max_row + 1,
-    ):
-        valor = hoja.cell(
-            numero_fila,
-            1,
-        ).value
-
-        if (
-            isinstance(
-                valor,
-                str,
-            )
-            and "TOTAL" in normalizar(
-                valor
-            )
-        ):
-            fila_total = numero_fila
-            break
-
-    if fila_total is None:
-        for numero_fila in range(
-            fila_inicio,
-            hoja.max_row + 1,
-        ):
-            formulas = [
-                hoja.cell(
-                    numero_fila,
-                    columna,
-                ).value
-                for columna in range(
-                    2,
-                    min(
-                        hoja.max_column,
-                        12,
-                    )
-                    + 1,
-                )
-            ]
-
-            if any(
-                isinstance(
-                    valor,
-                    str,
-                )
-                and valor.startswith(
-                    "=SUM("
-                )
-                for valor in formulas
-            ):
-                fila_total = numero_fila
-                break
-
-    if fila_total is None:
-        fila_total = (
-            fila_inicio
-            + max(
-                len(
-                    fechas
-                ),
-                31,
-            )
-        )
-
-    capacidad = (
-        fila_total
-        - fila_inicio
-    )
-
-    if len(
-        fechas
-    ) > capacidad:
-        extra = (
-            len(
-                fechas
-            )
-            - capacidad
-        )
-
-        hoja.insert_rows(
-            fila_total,
-            amount=extra,
-        )
-
-        fila_total += extra
-
-    filas = {}
-
-    for indice, fecha in enumerate(
-        fechas,
-        start=fila_inicio,
-    ):
-        celda = hoja.cell(
-            indice,
-            1,
-        )
-
-        celda.value = fecha
-        celda.number_format = "dd/mm/yyyy"
-
-        filas[
-            fecha.day
-        ] = indice
-
-    ultima_fecha_fila = (
-        fila_inicio
-        + len(
-            fechas
-        )
-        - 1
-    )
-
-    for numero_fila in range(
-        ultima_fecha_fila + 1,
-        fila_total,
-    ):
-        celda = hoja.cell(
-            numero_fila,
-            1,
-        )
-
-        if (
-            celda.__class__.__name__
-            != "MergedCell"
-        ):
-            celda.value = None
-
-    return filas
-
-
-def nombre_salida_reporte(
-    prefijo: str,
-    mes: int,
-    anio: int,
-) -> str:
-    return (
-        prefijo
-        + " "
-        + MESES_ES[
-            mes
-        ]
-        + " "
-        + str(
-            anio
-        )
-        + ".xlsx"
-    )
-
-
-def nombre_mes_a_numero(
-    valor: Any,
-) -> int | None:
-    if valor in (
-        None,
-        "",
-    ):
+    try:
+        dia = int(float(texto))
+    except (TypeError, ValueError):
         return None
 
-    if isinstance(
-        valor,
-        (
-            int,
-            float,
-        ),
-    ):
-        numero = int(
-            valor
+    mes = mes_desde_valor(valor_mes)
+    anio = anio_desde_valor(valor_anio)
+
+    if not mes or not anio:
+        return None
+
+    try:
+        return date(anio, mes, dia)
+    except ValueError:
+        return None
+
+
+def _valor_fila(
+    fila: tuple[Any, ...],
+    columna_excel: int | None,
+) -> Any:
+    if columna_excel is None:
+        return None
+
+    indice = columna_excel - 1
+
+    if indice < 0 or indice >= len(fila):
+        return None
+
+    return fila[indice]
+
+
+def buscar_hoja_plastica(workbook):
+    hojas = [
+        hoja
+        for hoja in workbook.worksheets
+        if "PLAST" in normalizar(hoja.title)
+        and "METAL" not in normalizar(hoja.title)
+    ]
+
+    if not hojas:
+        raise ValueError(
+            "No se encontró una hoja correspondiente a Plástica."
         )
 
-        if 1 <= numero <= 12:
-            return numero
+    hojas.sort(key=lambda hoja: hoja.max_row, reverse=True)
+    return hojas[0]
 
-    limpio = normalizar(
-        valor
-    )
 
-    meses = {
-        "ENERO": 1,
-        "FEBRERO": 2,
-        "MARZO": 3,
-        "ABRIL": 4,
-        "MAYO": 5,
-        "JUNIO": 6,
-        "JULIO": 7,
-        "AGOSTO": 8,
-        "SEPTIEMBRE": 9,
-        "SETIEMBRE": 9,
-        "OCTUBRE": 10,
-        "NOVIEMBRE": 11,
-        "DICIEMBRE": 12,
+def buscar_fila_encabezados(hoja) -> tuple[int, dict[str, int]]:
+    obligatorios = {
+        "dia",
+        "equipo",
+        "clase",
+        "descripcion",
+        "trabajo",
+        "tiempo",
     }
 
-    return meses.get(
-        limpio
+    for numero_fila, fila in enumerate(
+        hoja.iter_rows(
+            min_row=1,
+            max_row=min(80, hoja.max_row),
+            values_only=True,
+        ),
+        start=1,
+    ):
+        mapa: dict[str, int] = {}
+
+        for columna, valor in enumerate(fila, start=1):
+            encabezado = normalizar(valor)
+
+            if not encabezado:
+                continue
+
+            for campo, opciones in ENCABEZADOS.items():
+                if encabezado in opciones:
+                    mapa[campo] = columna
+
+            if encabezado.startswith("ESTADO DE TRABAJO"):
+                mapa["estado"] = columna
+
+        if obligatorios.issubset(mapa):
+            return numero_fila, mapa
+
+    raise ValueError(
+        "No se encontraron los encabezados requeridos en la hoja de Plástica."
     )
 
 
-def leer_entrega_turno(
-    ruta: Path,
-) -> dict[str, Any]:
+def leer_entrega_turno(ruta: Path) -> dict[str, Any]:
     load_workbook, _, _ = _openpyxl()
 
     workbook = load_workbook(
         ruta,
-        data_only=True,
         read_only=True,
+        data_only=True,
     )
 
     try:
-        hoja = buscar_hoja_plastica(
-            workbook
-        )
+        hoja = buscar_hoja_plastica(workbook)
+        fila_encabezados, columnas = buscar_fila_encabezados(hoja)
 
-        fila_encabezados, columnas, extras = (
-            buscar_fila_encabezados(
-                hoja
-            )
-        )
+        columna_maxima = max(columnas.values())
+        registros: list[dict[str, Any]] = []
+        clases_ignoradas: set[str] = set()
+        maquinas_ignoradas: set[str] = set()
+        vacias_consecutivas = 0
 
-        registros = []
-        clases_ignoradas = set()
-        mes_detectado = None
-        anio_detectado = None
-        filas_vacias_consecutivas = 0
-
-        for numero_fila in range(
-            fila_encabezados + 1,
-            hoja.max_row + 1,
+        for numero_fila, fila in enumerate(
+            hoja.iter_rows(
+                min_row=fila_encabezados + 1,
+                max_col=columna_maxima,
+                values_only=True,
+            ),
+            start=fila_encabezados + 1,
         ):
-            valor_equipo = hoja.cell(
-                numero_fila,
-                columnas[
-                    "equipo"
-                ],
-            ).value
+            equipo_original = _valor_fila(
+                fila,
+                columnas.get("equipo"),
+            )
 
             if (
-                valor_equipo is None
-                or str(
-                    valor_equipo
-                ).strip() == ""
+                equipo_original is None
+                or str(equipo_original).strip() == ""
             ):
-                filas_vacias_consecutivas += 1
+                vacias_consecutivas += 1
 
-                if filas_vacias_consecutivas >= 10:
+                if vacias_consecutivas >= 10:
                     break
 
                 continue
 
-            filas_vacias_consecutivas = 0
+            vacias_consecutivas = 0
 
-            maquina = resolver_maquina(
-                valor_equipo
-            )
+            maquina = resolver_maquina(equipo_original)
 
-            if (
-                maquina is None
-                or maquina not in ORDEN_MAQUINAS
-            ):
+            if maquina not in ORDEN_MAQUINAS:
+                maquinas_ignoradas.add(str(equipo_original).strip())
                 continue
 
-            clase_original = hoja.cell(
-                numero_fila,
-                columnas[
-                    "clase"
-                ],
-            ).value
-
-            clase = normalizar(
-                clase_original
-            ).replace(
-                " ",
-                "",
+            clase_original = _valor_fila(
+                fila,
+                columnas.get("clase"),
             )
+            clase = clase_normalizada(clase_original)
 
             if clase not in CLASES_ORDEN:
                 if clase:
-                    clases_ignoradas.add(
-                        str(
-                            clase_original
-                        )
-                    )
-
+                    clases_ignoradas.add(str(clase_original).strip())
                 continue
 
-            valor_dia = hoja.cell(
-                numero_fila,
-                columnas[
-                    "dia"
-                ],
-            ).value
-
-            fecha_evento = fecha_completa_desde_valor(
-                valor_dia
+            fecha_evento = fecha_desde_valores(
+                _valor_fila(fila, columnas.get("dia")),
+                _valor_fila(fila, columnas.get("mes")),
+                _valor_fila(fila, columnas.get("anio")),
             )
 
-            dia = dia_desde_valor(
-                valor_dia
-            )
-
-            if dia is None:
+            if fecha_evento is None:
                 continue
 
-            minutos = valor_minutos(
-                hoja.cell(
-                    numero_fila,
-                    columnas[
-                        "tiempo"
-                    ],
-                ).value
+            minutos = minutos_desde_valor(
+                _valor_fila(
+                    fila,
+                    columnas.get("tiempo"),
+                )
             )
 
             if minutos <= 0:
                 continue
 
-            descripcion = str(
-                hoja.cell(
-                    numero_fila,
-                    columnas[
-                        "descripcion"
-                    ],
-                ).value
-                or ""
-            ).strip()
-
-            trabajo = str(
-                hoja.cell(
-                    numero_fila,
-                    columnas[
-                        "trabajo"
-                    ],
-                ).value
-                or ""
-            ).strip()
-
-            estado = ""
-
-            if "estado" in columnas:
-                estado = str(
-                    hoja.cell(
-                        numero_fila,
-                        columnas[
-                            "estado"
-                        ],
-                    ).value
-                    or ""
-                ).strip()
-
-            if (
-                mes_detectado is None
-                and "mes" in extras
-            ):
-                mes_detectado = nombre_mes_a_numero(
-                    hoja.cell(
-                        numero_fila,
-                        extras[
-                            "mes"
-                        ],
-                    ).value
-                )
-
-            if (
-                anio_detectado is None
-                and "anio" in extras
-            ):
-                valor_anio = hoja.cell(
-                    numero_fila,
-                    extras[
-                        "anio"
-                    ],
-                ).value
-
-                try:
-                    anio_detectado = int(
-                        valor_anio
-                    )
-                except (
-                    TypeError,
-                    ValueError,
-                ):
-                    pass
-
             registros.append(
                 {
-                    "fila_origen":
-                        numero_fila,
-                    "dia":
-                        dia,
-                    "fecha":
-                        fecha_evento,
-                    "equipo_origen":
-                        str(
-                            valor_equipo
-                        ).strip(),
-                    "maquina":
-                        maquina,
-                    "clase_orden":
-                        clase,
-                    "categoria":
-                        CLASES_ORDEN[
-                            clase
-                        ],
-                    "descripcion":
-                        descripcion,
-                    "trabajo_realizado":
-                        trabajo,
-                    "estado":
-                        estado,
-                    "minutos":
-                        minutos,
+                    "fila_origen": numero_fila,
+                    "fecha": fecha_evento,
+                    "dia": fecha_evento.day,
+                    "maquina": maquina,
+                    "equipo_origen": str(equipo_original).strip(),
+                    "clase_orden": clase,
+                    "categoria": CLASES_ORDEN[clase],
+                    "descripcion": str(
+                        _valor_fila(
+                            fila,
+                            columnas.get("descripcion"),
+                        )
+                        or ""
+                    ).strip(),
+                    "trabajo_realizado": str(
+                        _valor_fila(
+                            fila,
+                            columnas.get("trabajo"),
+                        )
+                        or ""
+                    ).strip(),
+                    "estado": str(
+                        _valor_fila(
+                            fila,
+                            columnas.get("estado"),
+                        )
+                        or ""
+                    ).strip(),
+                    "minutos": minutos,
                 }
             )
 
@@ -1354,178 +529,114 @@ def leer_entrega_turno(
             )
 
         return {
-            "hoja":
-                hoja.title,
-            "registros":
-                registros,
-            "maquinas_no_reconocidas":
-                [],
-            "clases_ignoradas":
-                sorted(
-                    clases_ignoradas
-                ),
-            "mes":
-                mes_detectado,
-            "anio":
-                anio_detectado,
+            "hoja": hoja.title,
+            "registros": registros,
+            "clases_ignoradas": sorted(clases_ignoradas),
+            "maquinas_no_reconocidas": sorted(maquinas_ignoradas),
         }
 
     finally:
         workbook.close()
 
 
-def nombre_formato_maquina(
-    codigo: str,
-) -> str:
-    nombres = {
-        "CCM1": "CCM 01",
-        "CCM2": "CCM 02",
-        "CCM3": "CCM 03",
-        "CCM4": "CCM 04",
-        "CCM5": "CCM 05",
-        "CCM6": "CCM 06",
-        "CCM7": "CCM 07",
-        "CCM8": "CCM 08",
-        "PMV2": "PMV 02",
-        "PMV4": "PMV 04",
-    }
+def periodo_29_28(mes: int, anio: int) -> list[date]:
+    if mes == 1:
+        mes_anterior = 12
+        anio_anterior = anio - 1
+    else:
+        mes_anterior = mes - 1
+        anio_anterior = anio
 
-    return nombres[
-        codigo
-    ]
+    ultimo_anterior = calendar.monthrange(
+        anio_anterior,
+        mes_anterior,
+    )[1]
 
+    dia_inicial = 29 if ultimo_anterior >= 29 else ultimo_anterior
 
-def buscar_columnas_maquinas(
-    hoja,
-    fila_encabezado: int = 8,
-) -> dict[str, int]:
-    resultado = {}
+    inicio = date(
+        anio_anterior,
+        mes_anterior,
+        dia_inicial,
+    )
+    fin = date(anio, mes, 28)
 
-    for celda in hoja[
-        fila_encabezado
-    ]:
-        valor = normalizar(
-            celda.value
-        )
+    resultado = []
+    actual = inicio
 
-        if not valor:
-            continue
-
-        maquina = resolver_maquina(
-            valor
-        )
-
-        if maquina in ORDEN_MAQUINAS:
-            resultado[
-                maquina
-            ] = celda.column
-
-    faltantes = [
-        maquina
-        for maquina in ORDEN_MAQUINAS
-        if maquina not in resultado
-    ]
-
-    if faltantes:
-        raise ValueError(
-            "El formato no contiene columnas para: "
-            + ", ".join(
-                faltantes
-            )
-        )
+    while actual <= fin:
+        resultado.append(actual)
+        actual += timedelta(days=1)
 
     return resultado
 
 
-def filas_dias_del_formato(
-    hoja,
-) -> dict[int, int]:
-    resultado = {}
+def determinar_periodo(
+    registros: list[dict[str, Any]],
+) -> tuple[int, int, list[date]]:
+    fechas = [
+        registro["fecha"]
+        for registro in registros
+        if registro.get("fecha")
+    ]
 
-    for numero_fila in range(
-        9,
-        hoja.max_row + 1,
-    ):
-        valor = hoja.cell(
-            numero_fila,
-            1,
-        ).value
+    if not fechas:
+        hoy = date.today()
+        return hoy.month, hoy.year, periodo_29_28(hoy.month, hoy.year)
 
-        dia = dia_desde_valor(
-            valor
-        )
+    fecha_maxima = max(fechas)
 
-        if dia is None:
-            continue
+    if fecha_maxima.day <= 28:
+        mes_reporte = fecha_maxima.month
+        anio_reporte = fecha_maxima.year
+    else:
+        siguiente = fecha_maxima + timedelta(days=7)
+        mes_reporte = siguiente.month
+        anio_reporte = siguiente.year
 
-        if 1 <= dia <= 31:
-            resultado[
-                dia
-            ] = numero_fila
-
-    if not resultado:
-        raise ValueError(
-            f"No se encontraron días en la columna A de la hoja '{hoja.title}'."
-        )
-
-    return resultado
-
-
-def _agregar_unico(
-    lista: list[str],
-    valor: str,
-) -> None:
-    limpio = str(
-        valor
-        or ""
-    ).strip()
-
-    if not limpio:
-        return
-
-    clave = normalizar(
-        limpio
+    periodo = periodo_29_28(
+        mes_reporte,
+        anio_reporte,
     )
 
-    existentes = {
-        normalizar(
-            item
-        )
-        for item in lista
-    }
-
-    if clave not in existentes:
-        lista.append(
-            limpio
-        )
+    return mes_reporte, anio_reporte, periodo
 
 
-def construir_agregados(
+def agregar_unico(lista: list[str], valor: Any) -> None:
+    texto = str(valor or "").strip()
+
+    if not texto:
+        return
+
+    clave = normalizar(texto)
+
+    if not any(
+        normalizar(existente) == clave
+        for existente in lista
+    ):
+        lista.append(texto)
+
+
+def construir_agregados_diarios(
     registros: list[dict[str, Any]],
-) -> dict[str, dict[tuple[int, str], dict[str, Any]]]:
-    agregados = {
+) -> dict[
+    str,
+    dict[tuple[date, str], dict[str, Any]],
+]:
+    resultado = {
         "correctivo": {},
         "preventivo": {},
         "cambio": {},
     }
 
     for registro in registros:
-        categoria = registro[
-            "categoria"
-        ]
-
+        categoria = registro["categoria"]
         clave = (
-            registro[
-                "dia"
-            ],
-            registro[
-                "maquina"
-            ],
+            registro["fecha"],
+            registro["maquina"],
         )
 
-        grupo = agregados[
-            categoria
-        ].setdefault(
+        grupo = resultado[categoria].setdefault(
             clave,
             {
                 "minutos": 0,
@@ -1533,50 +644,14 @@ def construir_agregados(
             },
         )
 
-        grupo[
-            "minutos"
-        ] += registro[
-            "minutos"
-        ]
+        grupo["minutos"] += registro["minutos"]
 
-        _agregar_unico(
-            grupo[
-                "descripciones"
-            ],
-            registro[
-                "descripcion"
-            ],
+        agregar_unico(
+            grupo["descripciones"],
+            registro["descripcion"],
         )
 
-    return agregados
-
-
-def texto_comentario(
-    descripciones: list[str],
-) -> str:
-    limpias = []
-
-    for descripcion in descripciones:
-        _agregar_unico(
-            limpias,
-            descripcion,
-        )
-
-    if not limpias:
-        return "Sin descripción de parada."
-
-    if len(
-        limpias
-    ) == 1:
-        return limpias[0]
-
-    return "\n".join(
-        f"{indice}. {descripcion}"
-        for indice, descripcion in enumerate(
-            limpias,
-            start=1,
-        )
-    )
+    return resultado
 
 
 def construir_fallas_correctivas(
@@ -1588,85 +663,46 @@ def construir_fallas_correctivas(
     ] = {}
 
     for registro in registros:
-        if registro[
-            "categoria"
-        ] != "correctivo":
+        if registro["categoria"] != "correctivo":
             continue
 
-        descripcion = str(
-            registro[
-                "descripcion"
-            ]
-            or ""
+        descripcion_original = str(
+            registro["descripcion"] or ""
         ).strip()
 
-        clave_descripcion = normalizar(
-            descripcion
-        )
+        descripcion_clave = normalizar(descripcion_original)
 
-        if not clave_descripcion:
-            clave_descripcion = (
-                "SIN DESCRIPCION"
-            )
+        if not descripcion_clave:
+            descripcion_clave = "SIN DESCRIPCION"
 
         clave = (
-            registro[
-                "maquina"
-            ],
-            clave_descripcion,
+            registro["maquina"],
+            descripcion_clave,
         )
 
         grupo = grupos.setdefault(
             clave,
             {
-                "maquina":
-                    registro[
-                        "maquina"
-                    ],
-                "descripcion":
-                    descripcion
-                    or "Sin descripción de parada",
-                "minutos":
-                    0,
-                "trabajos_terminados":
-                    [],
-                "terminados":
-                    0,
-                "registros":
-                    0,
+                "maquina": registro["maquina"],
+                "descripcion": (
+                    descripcion_original
+                    or "Sin descripción de parada"
+                ),
+                "minutos": 0,
+                "trabajos_terminados": [],
+                "terminaciones": 0,
             },
         )
 
-        grupo[
-            "minutos"
-        ] += registro[
-            "minutos"
-        ]
+        grupo["minutos"] += registro["minutos"]
 
-        grupo[
-            "registros"
-        ] += 1
-
-        estado = normalizar(
-            registro.get(
-                "estado",
-                "",
-            )
-        )
+        estado = normalizar(registro.get("estado"))
 
         if "TERMINADO" in estado:
-            grupo[
-                "terminados"
-            ] += 1
-
-            _agregar_unico(
-                grupo[
-                    "trabajos_terminados"
-                ],
-                registro.get(
-                    "trabajo_realizado",
-                    "",
-                ),
+            grupo["terminaciones"] += 1
+            agregar_unico(
+                grupo["trabajos_terminados"],
+                registro.get("trabajo_realizado"),
             )
 
     por_maquina = {
@@ -1675,559 +711,105 @@ def construir_fallas_correctivas(
     }
 
     for grupo in grupos.values():
-        grupo[
-            "eventos"
-        ] = max(
+        grupo["eventos"] = max(
             1,
-            grupo[
-                "terminados"
-            ],
+            grupo["terminaciones"],
         )
-
-        grupo[
-            "trabajo_realizado"
-        ] = "\n".join(
-            grupo[
-                "trabajos_terminados"
-            ]
+        grupo["trabajo_realizado"] = "\n".join(
+            grupo["trabajos_terminados"]
         )
+        por_maquina[groupo_maquina := grupo["maquina"]].append(grupo)
 
-        por_maquina[
-            grupo[
-                "maquina"
-            ]
-        ].append(
-            grupo
-        )
-
-    for maquina in por_maquina:
-        por_maquina[
-            maquina
-        ].sort(
+    for maquina in ORDEN_MAQUINAS:
+        por_maquina[maquina].sort(
             key=lambda item: (
-                -item[
-                    "minutos"
-                ],
-                normalizar(
-                    item[
-                        "descripcion"
-                    ]
-                ),
+                -item["minutos"],
+                normalizar(item["descripcion"]),
             )
         )
 
         for numero, falla in enumerate(
-            por_maquina[
-                maquina
-            ],
+            por_maquina[maquina],
             start=1,
         ):
-            falla[
-                "falla_no"
-            ] = numero
+            falla["falla_no"] = numero
 
     return por_maquina
 
 
-def limpiar_matriz_tiempos(
-    hoja,
-    filas_dias: dict[int, int],
-    columnas: dict[str, int],
-) -> None:
-    for fila in filas_dias.values():
-        for columna in columnas.values():
-            celda = hoja.cell(
-                fila,
-                columna,
-            )
+def todas_fallas_correctivas(
+    fallas_por_maquina: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, Any]]:
+    resultado = []
 
-            celda.value = 0
-            celda.comment = None
-
-
-def llenar_matriz(
-    hoja,
-    datos: dict[tuple[int, str], dict[str, Any]],
-    fechas_periodo: list[date],
-) -> None:
-    _, Comment, _ = _openpyxl()
-
-    columnas = buscar_columnas_maquinas(
-        hoja
-    )
-
-    filas_dias = preparar_fechas_formato(
-        hoja,
-        fechas_periodo,
-    )
-
-    limpiar_matriz_tiempos(
-        hoja,
-        filas_dias,
-        columnas,
-    )
-
-    for (
-        dia,
-        maquina,
-    ), grupo in datos.items():
-        if dia not in filas_dias:
-            continue
-
-        fila = filas_dias[
-            dia
-        ]
-
-        columna = columnas[
-            maquina
-        ]
-
-        celda = hoja.cell(
-            fila,
-            columna,
+    for maquina in ORDEN_MAQUINAS:
+        resultado.extend(
+            dict(falla)
+            for falla in fallas_por_maquina.get(maquina, [])
         )
 
-        celda.value = grupo[
-            "minutos"
-        ]
-
-        celda.comment = Comment(
-            texto_comentario(
-                grupo[
-                    "descripciones"
-                ]
-            ),
-            "CMMS Industrial",
-        )
+    return resultado
 
 
-def buscar_hoja_por_nombre(
-    workbook,
-    nombre_esperado: str,
-):
-    if nombre_esperado in workbook.sheetnames:
-        return workbook[
-            nombre_esperado
-        ]
+def buscar_hoja(workbook, nombre: str):
+    if nombre in workbook.sheetnames:
+        return workbook[nombre]
 
-    esperado = normalizar(
-        nombre_esperado
-    )
+    objetivo = normalizar(nombre)
 
     for hoja in workbook.worksheets:
-        if normalizar(
-            hoja.title
-        ) == esperado:
+        if normalizar(hoja.title) == objetivo:
             return hoja
 
     raise ValueError(
-        f"No se encontró la hoja '{nombre_esperado}'."
+        f"No se encontró la hoja '{nombre}'."
     )
 
 
-def _hoja_trabajos_por_maquina(
-    workbook,
-    maquina: str,
-):
-    nombres = {
-        "CCM1":
-            "Trabajos Realizados CCM1",
-        "CCM2":
-            "Trabajos Realizados CCM2",
-        "CCM3":
-            "Trabajos Realizados CCM3",
-        "CCM4":
-            "Trabajos Realizados CCM64-1",
-        "CCM5":
-            "Trabajos Realizados CCM64-2",
-        "CCM6":
-            "Trabajos Realizados CCM 06",
-        "CCM7":
-            "Trabajos Realizados CCM 07",
-        "CCM8":
-            "Trabajos Realizados CCM 08",
-        "PMV2":
-            "Trabajos Realizados PMV 02",
-        "PMV4":
-            "Trabajos Realizados PMV 04",
-    }
+def buscar_fila_con_texto(
+    hoja,
+    texto: str,
+    columna: int,
+    inicio: int = 1,
+) -> int | None:
+    objetivo = normalizar(texto)
 
-    nombre = nombres[
-        maquina
-    ]
+    for fila in range(inicio, hoja.max_row + 1):
+        valor = hoja.cell(fila, columna).value
 
-    return buscar_hoja_por_nombre(
-        workbook,
-        nombre,
-    )
+        if objetivo in normalizar(valor):
+            return fila
+
+    return None
 
 
-def buscar_fila_total(
+def buscar_fila_total_formula(
     hoja,
     columna: int,
-    fila_inicio: int,
+    inicio: int,
 ) -> int | None:
-    for fila in range(
-        fila_inicio,
-        hoja.max_row + 1,
-    ):
-        valor = hoja.cell(
-            fila,
-            columna,
-        ).value
+    for fila in range(inicio, hoja.max_row + 1):
+        valor = hoja.cell(fila, columna).value
 
         if (
-            isinstance(
-                valor,
-                str,
-            )
-            and valor.startswith(
-                "=SUM("
-            )
+            isinstance(valor, str)
+            and valor.upper().startswith("=SUM(")
         ):
             return fila
 
     return None
 
 
-def copiar_altura_fila(
-    hoja,
-    fila_origen: int,
-    fila_destino: int,
-) -> None:
-    altura = hoja.row_dimensions[
-        fila_origen
-    ].height
+def copiar_estilo_celda(origen, destino) -> None:
+    if origen.has_style:
+        destino._style = copy(origen._style)
 
-    if altura is not None:
-        hoja.row_dimensions[
-            fila_destino
-        ].height = altura
-
-
-def asegurar_filas_antes_de_total(
-    hoja,
-    fila_inicio: int,
-    fila_total: int,
-    cantidad_necesaria: int,
-    fila_estilo: int,
-    columnas: range,
-) -> int:
-    capacidad = max(
-        0,
-        fila_total - fila_inicio,
-    )
-
-    extra = max(
-        0,
-        cantidad_necesaria - capacidad,
-    )
-
-    if extra > 0:
-        hoja.insert_rows(
-            fila_total,
-            amount=extra,
-        )
-
-        for fila in range(
-            fila_total,
-            fila_total + extra,
-        ):
-            copiar_estilo_fila(
-                hoja,
-                fila_estilo,
-                fila,
-                columnas,
-            )
-
-            copiar_altura_fila(
-                hoja,
-                fila_estilo,
-                fila,
-            )
-
-        fila_total += extra
-
-    return fila_total
-
-
-def limpiar_datos_sin_tocar_combinadas(
-    hoja,
-    fila_inicio: int,
-    fila_fin: int,
-    columna_inicio: int,
-    columna_fin: int,
-) -> None:
-    for fila in range(
-        fila_inicio,
-        fila_fin + 1,
-    ):
-        for columna in range(
-            columna_inicio,
-            columna_fin + 1,
-        ):
-            celda = hoja.cell(
-                fila,
-                columna,
-            )
-
-            if (
-                celda.__class__.__name__
-                == "MergedCell"
-            ):
-                continue
-
-            celda.value = None
-
-
-def llenar_trabajos_realizados(
-    workbook,
-    fallas_por_maquina: dict[
-        str,
-        list[dict[str, Any]],
-    ],
-    fechas_periodo: list[date],
-) -> None:
-    for maquina in ORDEN_MAQUINAS:
-        hoja = _hoja_trabajos_por_maquina(
-            workbook,
-            maquina,
-        )
-
-        fila_inicio = 8
-
-        fila_total = buscar_fila_total(
-            hoja,
-            4,
-            fila_inicio,
-        )
-
-        if fila_total is None:
-            fila_total = max(
-                hoja.max_row + 1,
-                fila_inicio + 1,
-            )
-
-        fallas = fallas_por_maquina.get(
-            maquina,
-            [],
-        )
-
-        fila_total = asegurar_filas_antes_de_total(
-            hoja,
-            fila_inicio,
-            fila_total,
-            len(
-                fallas
-            ),
-            fila_inicio,
-            range(
-                1,
-                6,
-            ),
-        )
-
-        limpiar_datos_sin_tocar_combinadas(
-            hoja,
-            fila_inicio,
-            fila_total - 1,
-            1,
-            5,
-        )
-
-        for indice, falla in enumerate(
-            fallas,
-            start=fila_inicio,
-        ):
-            copiar_estilo_fila(
-                hoja,
-                fila_inicio,
-                indice,
-                range(
-                    1,
-                    6,
-                ),
-            )
-
-            copiar_altura_fila(
-                hoja,
-                fila_inicio,
-                indice,
-            )
-
-            hoja.cell(
-                indice,
-                1,
-            ).value = falla[
-                "falla_no"
-            ]
-
-            hoja.cell(
-                indice,
-                2,
-            ).value = falla[
-                "descripcion"
-            ]
-
-            hoja.cell(
-                indice,
-                3,
-            ).value = falla[
-                "trabajo_realizado"
-            ]
-
-            hoja.cell(
-                indice,
-                4,
-            ).value = falla[
-                "minutos"
-            ]
-
-            hoja.cell(
-                indice,
-                5,
-            ).value = falla[
-                "eventos"
-            ]
-
-        ultima_fila = (
-            fila_inicio
-            + len(
-                fallas
-            )
-            - 1
-        )
-
-        if not fallas:
-            ultima_fila = fila_inicio
-
-        hoja.cell(
-            fila_total,
-            4,
-        ).value = (
-            f"=SUM(D{fila_inicio}:D{ultima_fila})"
-        )
-
-
-def diligenciar_formato_tiempos(
-    plantilla: Path,
-    salida: Path,
-    agregados: dict[
-        str,
-        dict[
-            tuple[int, str],
-            dict[str, Any],
-        ],
-    ],
-    fallas_por_maquina: dict[
-        str,
-        list[dict[str, Any]],
-    ],
-    fechas_periodo: list[date],
-) -> None:
-    load_workbook, _, _ = _openpyxl()
-
-    shutil.copy2(
-        plantilla,
-        salida,
-    )
-
-    keep_vba = (
-        salida.suffix.lower()
-        == ".xlsm"
-    )
-
-    workbook = load_workbook(
-        salida,
-        keep_vba=keep_vba,
-    )
-
-    try:
-        for categoria, nombre_hoja in HOJAS_DESTINO_TIEMPOS.items():
-            hoja = buscar_hoja_por_nombre(
-                workbook,
-                nombre_hoja,
-            )
-
-            llenar_matriz(
-                hoja,
-                agregados[
-                    categoria
-                ],
-                fechas_periodo,
-            )
-
-        llenar_trabajos_realizados(
-            workbook,
-            fallas_por_maquina,
-        )
-
-        workbook.save(
-            salida
-        )
-
-    finally:
-        workbook.close()
-
-
-def limpiar_rango_valores(
-    hoja,
-    min_row: int,
-    max_row: int,
-    min_col: int,
-    max_col: int,
-) -> None:
-    for fila in range(
-        min_row,
-        max_row + 1,
-    ):
-        for columna in range(
-            min_col,
-            max_col + 1,
-        ):
-            celda = hoja.cell(
-                fila,
-                columna,
-            )
-
-            if (
-                celda.__class__.__name__
-                == "MergedCell"
-            ):
-                continue
-
-            celda.value = None
-
-
-def fallas_para_pareto(
-    fallas_por_maquina: dict[
-        str,
-        list[dict[str, Any]],
-    ],
-) -> list[dict[str, Any]]:
-    resultado = []
-
-    for maquina in (
-        "CCM1",
-        "CCM2",
-        "CCM3",
-        "CCM4",
-        "CCM5",
-        "CCM6",
-        "CCM7",
-        "CCM8",
-    ):
-        for falla in fallas_por_maquina.get(
-            maquina,
-            [],
-        ):
-            resultado.append(
-                dict(
-                    falla
-                )
-            )
-
-    return resultado
+    destino.number_format = origen.number_format
+    destino.font = copy(origen.font)
+    destino.fill = copy(origen.fill)
+    destino.border = copy(origen.border)
+    destino.alignment = copy(origen.alignment)
+    destino.protection = copy(origen.protection)
 
 
 def copiar_estilo_fila(
@@ -2237,44 +819,384 @@ def copiar_estilo_fila(
     columnas: range,
 ) -> None:
     for columna in columnas:
-        origen = hoja.cell(
-            fila_origen,
-            columna,
+        copiar_estilo_celda(
+            hoja.cell(fila_origen, columna),
+            hoja.cell(fila_destino, columna),
         )
 
-        destino = hoja.cell(
-            fila_destino,
-            columna,
+    altura = hoja.row_dimensions[fila_origen].height
+
+    if altura is not None:
+        hoja.row_dimensions[fila_destino].height = altura
+
+
+def es_merged_cell(celda) -> bool:
+    return celda.__class__.__name__ == "MergedCell"
+
+
+def limpiar_rango(
+    hoja,
+    fila_inicio: int,
+    fila_fin: int,
+    columna_inicio: int,
+    columna_fin: int,
+) -> None:
+    for fila in range(fila_inicio, fila_fin + 1):
+        for columna in range(columna_inicio, columna_fin + 1):
+            celda = hoja.cell(fila, columna)
+
+            if es_merged_cell(celda):
+                continue
+
+            celda.value = None
+            celda.comment = None
+
+
+def fila_inicio_matriz(hoja) -> int:
+    fila_encabezado = None
+
+    for fila in range(1, min(20, hoja.max_row) + 1):
+        if "DIA PLANTA" in normalizar(
+            hoja.cell(fila, 1).value
+        ):
+            fila_encabezado = fila
+            break
+
+    if fila_encabezado is None:
+        raise ValueError(
+            f"No se encontró 'DÍA / planta' en la hoja '{hoja.title}'."
         )
 
-        if origen.has_style:
-            destino._style = copy(
-                origen._style
+    fin_encabezado = fila_encabezado
+
+    for rango in hoja.merged_cells.ranges:
+        if (
+            rango.min_col == 1
+            and rango.max_col == 1
+            and rango.min_row <= fila_encabezado <= rango.max_row
+        ):
+            fin_encabezado = max(
+                fin_encabezado,
+                rango.max_row,
             )
 
-        destino.font = copy(
-            origen.font
+    return fin_encabezado + 1
+
+
+def columnas_maquinas(hoja) -> dict[str, int]:
+    resultado: dict[str, int] = {}
+
+    for fila in range(1, min(20, hoja.max_row) + 1):
+        if "DIA PLANTA" not in normalizar(
+            hoja.cell(fila, 1).value
+        ):
+            continue
+
+        for columna in range(2, hoja.max_column + 1):
+            maquina = resolver_maquina(
+                hoja.cell(fila, columna).value
+            )
+
+            if maquina in ORDEN_MAQUINAS:
+                resultado[maquina] = columna
+
+        break
+
+    faltantes = [
+        maquina
+        for maquina in ORDEN_MAQUINAS
+        if maquina not in resultado
+    ]
+
+    if faltantes:
+        raise ValueError(
+            "El formato no contiene las columnas: "
+            + ", ".join(faltantes)
         )
 
-        destino.fill = copy(
-            origen.fill
+    return resultado
+
+
+def comentario_descripciones(descripciones: list[str]) -> str:
+    unicas: list[str] = []
+
+    for descripcion in descripciones:
+        agregar_unico(unicas, descripcion)
+
+    if not unicas:
+        return "Sin descripción de parada."
+
+    if len(unicas) == 1:
+        return unicas[0]
+
+    return "\n".join(
+        f"{numero}. {descripcion}"
+        for numero, descripcion in enumerate(
+            unicas,
+            start=1,
+        )
+    )
+
+
+def preparar_matriz(
+    hoja,
+    periodo: list[date],
+    incluir_total_dia: bool = False,
+) -> tuple[
+    dict[date, int],
+    dict[str, int],
+    int,
+]:
+    inicio = fila_inicio_matriz(hoja)
+    columnas = columnas_maquinas(hoja)
+
+    fila_total = buscar_fila_total_formula(
+        hoja,
+        min(columnas.values()),
+        inicio,
+    )
+
+    if fila_total is None:
+        fila_total = hoja.max_row
+
+    capacidad = fila_total - inicio
+
+    if len(periodo) > capacidad:
+        extra = len(periodo) - capacidad
+        hoja.insert_rows(fila_total, amount=extra)
+
+        for fila in range(
+            fila_total,
+            fila_total + extra,
+        ):
+            copiar_estilo_fila(
+                hoja,
+                inicio,
+                fila,
+                range(1, hoja.max_column + 1),
+            )
+
+        fila_total += extra
+
+    limpiar_rango(
+        hoja,
+        inicio,
+        fila_total - 1,
+        1,
+        hoja.max_column,
+    )
+
+    filas_fecha: dict[date, int] = {}
+
+    for offset, fecha_actual in enumerate(periodo):
+        fila = inicio + offset
+        filas_fecha[fecha_actual] = fila
+
+        celda_fecha = hoja.cell(fila, 1)
+        celda_fecha.value = fecha_actual
+        celda_fecha.number_format = "dd/mm/yyyy"
+
+        for columna in columnas.values():
+            hoja.cell(fila, columna).value = 0
+
+        if incluir_total_dia:
+            columna_total = max(columnas.values()) + 1
+            hoja.cell(
+                fila,
+                columna_total,
+            ).value = (
+                f"=SUM("
+                f"{hoja.cell(fila, min(columnas.values())).coordinate}:"
+                f"{hoja.cell(fila, max(columnas.values())).coordinate}"
+                f")"
+            )
+
+    ultima_fila_periodo = inicio + len(periodo) - 1
+
+    for fila in range(
+        ultima_fila_periodo + 1,
+        fila_total,
+    ):
+        for columna in range(1, hoja.max_column + 1):
+            celda = hoja.cell(fila, columna)
+
+            if not es_merged_cell(celda):
+                celda.value = None
+                celda.comment = None
+
+    for maquina, columna in columnas.items():
+        hoja.cell(
+            fila_total,
+            columna,
+        ).value = (
+            f"=SUM("
+            f"{hoja.cell(inicio, columna).coordinate}:"
+            f"{hoja.cell(ultima_fila_periodo, columna).coordinate}"
+            f")"
         )
 
-        destino.border = copy(
-            origen.border
+    if incluir_total_dia:
+        columna_total = max(columnas.values()) + 1
+        hoja.cell(
+            fila_total,
+            columna_total,
+        ).value = (
+            f"=SUM("
+            f"{hoja.cell(fila_total, min(columnas.values())).coordinate}:"
+            f"{hoja.cell(fila_total, max(columnas.values())).coordinate}"
+            f")"
         )
 
-        destino.alignment = copy(
-            origen.alignment
+    return filas_fecha, columnas, fila_total
+
+
+def llenar_matriz(
+    hoja,
+    datos: dict[tuple[date, str], dict[str, Any]],
+    periodo: list[date],
+    incluir_total_dia: bool = False,
+) -> None:
+    _, Comment, _ = _openpyxl()
+
+    filas_fecha, columnas, _ = preparar_matriz(
+        hoja,
+        periodo,
+        incluir_total_dia=incluir_total_dia,
+    )
+
+    fechas_validas = set(periodo)
+
+    for (fecha_evento, maquina), grupo in datos.items():
+        if (
+            fecha_evento not in fechas_validas
+            or maquina not in columnas
+        ):
+            continue
+
+        celda = hoja.cell(
+            filas_fecha[fecha_evento],
+            columnas[maquina],
         )
 
-        destino.number_format = (
-            origen.number_format
+        celda.value = grupo["minutos"]
+        celda.comment = Comment(
+            comentario_descripciones(
+                grupo["descripciones"]
+            ),
+            "CMMS Industrial",
         )
 
-        destino.protection = copy(
-            origen.protection
+
+def asegurar_capacidad_tabla(
+    hoja,
+    fila_inicio: int,
+    fila_total: int,
+    cantidad: int,
+    columnas_estilo: range,
+) -> int:
+    capacidad = fila_total - fila_inicio
+
+    if cantidad <= capacidad:
+        return fila_total
+
+    extra = cantidad - capacidad
+    hoja.insert_rows(fila_total, amount=extra)
+
+    for fila in range(
+        fila_total,
+        fila_total + extra,
+    ):
+        copiar_estilo_fila(
+            hoja,
+            fila_inicio,
+            fila,
+            columnas_estilo,
         )
+
+    return fila_total + extra
+
+
+def llenar_trabajos_realizados(
+    workbook,
+    fallas_por_maquina: dict[str, list[dict[str, Any]]],
+) -> None:
+    for maquina in ORDEN_MAQUINAS:
+        hoja = buscar_hoja(
+            workbook,
+            HOJAS_TRABAJOS[maquina],
+        )
+
+        fila_inicio = 8
+        fila_total = buscar_fila_total_formula(
+            hoja,
+            4,
+            fila_inicio,
+        )
+
+        if fila_total is None:
+            fila_total = max(
+                hoja.max_row + 1,
+                fila_inicio + 13,
+            )
+
+        fallas = fallas_por_maquina.get(maquina, [])
+
+        fila_total = asegurar_capacidad_tabla(
+            hoja,
+            fila_inicio,
+            fila_total,
+            len(fallas),
+            range(1, 6),
+        )
+
+        limpiar_rango(
+            hoja,
+            fila_inicio,
+            fila_total - 1,
+            1,
+            5,
+        )
+
+        for offset, falla in enumerate(fallas):
+            fila = fila_inicio + offset
+            copiar_estilo_fila(
+                hoja,
+                fila_inicio,
+                fila,
+                range(1, 6),
+            )
+
+            hoja.cell(fila, 1).value = falla["falla_no"]
+            hoja.cell(fila, 2).value = falla["descripcion"]
+            hoja.cell(fila, 3).value = falla["trabajo_realizado"]
+            hoja.cell(fila, 4).value = falla["minutos"]
+            hoja.cell(fila, 5).value = falla["eventos"]
+
+        ultima = (
+            fila_inicio + len(fallas) - 1
+            if fallas
+            else fila_inicio
+        )
+
+        hoja.cell(
+            fila_total,
+            4,
+        ).value = f"=SUM(D{fila_inicio}:D{ultima})"
+
+
+def descombinar_columna_g_fallas(
+    hoja,
+    fila_inicio: int,
+    fila_total: int,
+) -> None:
+    for rango in list(hoja.merged_cells.ranges):
+        if (
+            rango.min_col == 7
+            and rango.max_col == 7
+            and rango.max_row >= fila_inicio
+            and rango.min_row < fila_total
+        ):
+            hoja.unmerge_cells(str(rango))
 
 
 def llenar_fallas_tapas(
@@ -2282,38 +1204,31 @@ def llenar_fallas_tapas(
     fallas: list[dict[str, Any]],
 ) -> None:
     fila_inicio = 4
-    fila_total_original = 41
-
-    for rango in list(
-        hoja.merged_cells.ranges
-    ):
-        if (
-            rango.min_col == 7
-            and rango.max_col == 7
-            and rango.max_row >= fila_inicio
-            and rango.min_row < fila_total_original
-        ):
-            hoja.unmerge_cells(
-                str(
-                    rango
-                )
-            )
-
-    fila_total = asegurar_filas_antes_de_total(
+    fila_total = buscar_fila_con_texto(
         hoja,
-        fila_inicio,
-        fila_total_original,
-        len(
-            fallas
-        ),
-        fila_inicio,
-        range(
-            2,
-            8,
-        ),
+        "TOTAL TIEMPOS PERDIDOS AREA",
+        4,
+        inicio=fila_inicio,
     )
 
-    limpiar_datos_sin_tocar_combinadas(
+    if fila_total is None:
+        fila_total = 41
+
+    descombinar_columna_g_fallas(
+        hoja,
+        fila_inicio,
+        fila_total,
+    )
+
+    fila_total = asegurar_capacidad_tabla(
+        hoja,
+        fila_inicio,
+        fila_total,
+        len(fallas),
+        range(2, 8),
+    )
+
+    limpiar_rango(
         hoja,
         fila_inicio,
         fila_total - 1,
@@ -2321,72 +1236,25 @@ def llenar_fallas_tapas(
         7,
     )
 
-    posiciones = defaultdict(
-        list
-    )
+    posiciones: dict[str, list[int]] = defaultdict(list)
 
-    for fila, falla in enumerate(
-        fallas,
-        start=fila_inicio,
-    ):
+    for offset, falla in enumerate(fallas):
+        fila = fila_inicio + offset
+
         copiar_estilo_fila(
             hoja,
             fila_inicio,
             fila,
-            range(
-                2,
-                8,
-            ),
+            range(2, 8),
         )
 
-        copiar_altura_fila(
-            hoja,
-            fila_inicio,
-            fila,
-        )
+        hoja.cell(fila, 2).value = falla["falla_no"]
+        hoja.cell(fila, 3).value = falla["maquina"]
+        hoja.cell(fila, 4).value = falla["descripcion"]
+        hoja.cell(fila, 5).value = falla["minutos"]
+        hoja.cell(fila, 6).value = falla["eventos"]
 
-        hoja.cell(
-            fila,
-            2,
-        ).value = falla[
-            "falla_no"
-        ]
-
-        hoja.cell(
-            fila,
-            3,
-        ).value = falla[
-            "maquina"
-        ]
-
-        hoja.cell(
-            fila,
-            4,
-        ).value = falla[
-            "descripcion"
-        ]
-
-        hoja.cell(
-            fila,
-            5,
-        ).value = falla[
-            "minutos"
-        ]
-
-        hoja.cell(
-            fila,
-            6,
-        ).value = falla[
-            "eventos"
-        ]
-
-        posiciones[
-            falla[
-                "maquina"
-            ]
-        ].append(
-            fila
-        )
+        posiciones[falla["maquina"]].append(fila)
 
     for maquina, filas in posiciones.items():
         primera = filas[0]
@@ -2395,9 +1263,7 @@ def llenar_fallas_tapas(
         hoja.cell(
             primera,
             7,
-        ).value = (
-            f"=SUM(E{primera}:E{ultima})"
-        )
+        ).value = f"=SUM(E{primera}:E{ultima})"
 
         if ultima > primera:
             hoja.merge_cells(
@@ -2407,30 +1273,20 @@ def llenar_fallas_tapas(
                 end_column=7,
             )
 
-    ultima_fila_datos = (
-        fila_inicio
-        + len(
-            fallas
-        )
-        - 1
+    ultima_datos = (
+        fila_inicio + len(fallas) - 1
+        if fallas
+        else fila_inicio
     )
-
-    if not fallas:
-        ultima_fila_datos = fila_inicio
 
     hoja.cell(
         fila_total,
         4,
-    ).value = (
-        "TOTAL TIEMPOS PERDIDOS AREA"
-    )
-
+    ).value = "TOTAL TIEMPOS PERDIDOS AREA"
     hoja.cell(
         fila_total,
         5,
-    ).value = (
-        f"=SUM(E{fila_inicio}:E{ultima_fila_datos})"
-    )
+    ).value = f"=SUM(E{fila_inicio}:E{ultima_datos})"
 
 
 def llenar_datos_pareto(
@@ -2438,73 +1294,37 @@ def llenar_datos_pareto(
     fallas: list[dict[str, Any]],
 ) -> None:
     fila_inicio = 4
-    fila_fin_base = 38
-    fila_insercion = 39
-    fila_total_base = 40
+    fila_total = buscar_fila_con_texto(
+        hoja,
+        "TOTAL TIEMPOS PERDIDOS AREA",
+        6,
+        inicio=fila_inicio,
+    )
+
+    if fila_total is None:
+        fila_total = 40
 
     ordenadas = sorted(
         fallas,
-        key=lambda item:
-            item[
-                "minutos"
-            ],
-        reverse=True,
+        key=lambda item: (
+            -item["minutos"],
+            item["maquina"],
+            normalizar(item["descripcion"]),
+        ),
     )
 
-    capacidad_base = (
-        fila_fin_base
-        - fila_inicio
-        + 1
-    )
-
-    extra = max(
-        0,
-        len(
-            ordenadas
-        )
-        - capacidad_base,
-    )
-
-    if extra > 0:
-        hoja.insert_rows(
-            fila_insercion,
-            amount=extra,
-        )
-
-        for fila in range(
-            fila_insercion,
-            fila_insercion + extra,
-        ):
-            copiar_estilo_fila(
-                hoja,
-                fila_inicio,
-                fila,
-                range(
-                    4,
-                    9,
-                ),
-            )
-
-            copiar_altura_fila(
-                hoja,
-                fila_inicio,
-                fila,
-            )
-
-    fila_total = (
-        fila_total_base
-        + extra
-    )
-
-    fila_fin_datos = max(
-        fila_fin_base + extra,
-        fila_inicio,
-    )
-
-    limpiar_datos_sin_tocar_combinadas(
+    fila_total = asegurar_capacidad_tabla(
         hoja,
         fila_inicio,
-        fila_fin_datos,
+        fila_total,
+        len(ordenadas),
+        range(4, 9),
+    )
+
+    limpiar_rango(
+        hoja,
+        fila_inicio,
+        fila_total - 1,
         4,
         8,
     )
@@ -2513,109 +1333,115 @@ def llenar_datos_pareto(
         ordenadas,
         start=1,
     ):
-        fila = (
-            fila_inicio
-            + numero
-            - 1
-        )
+        fila = fila_inicio + numero - 1
 
         copiar_estilo_fila(
             hoja,
             fila_inicio,
             fila,
-            range(
-                4,
-                9,
-            ),
+            range(4, 9),
         )
 
-        copiar_altura_fila(
-            hoja,
-            fila_inicio,
-            fila,
-        )
+        hoja.cell(fila, 4).value = numero
+        hoja.cell(fila, 5).value = falla["maquina"]
+        hoja.cell(fila, 6).value = falla["descripcion"]
+        hoja.cell(fila, 7).value = falla["minutos"]
+        hoja.cell(fila, 8).value = falla["eventos"]
 
-        hoja.cell(
-            fila,
-            4,
-        ).value = numero
-
-        hoja.cell(
-            fila,
-            5,
-        ).value = falla[
-            "maquina"
-        ]
-
-        hoja.cell(
-            fila,
-            6,
-        ).value = falla[
-            "descripcion"
-        ]
-
-        hoja.cell(
-            fila,
-            7,
-        ).value = falla[
-            "minutos"
-        ]
-
-        hoja.cell(
-            fila,
-            8,
-        ).value = falla[
-            "eventos"
-        ]
-
-    ultima_fila_datos = (
-        fila_inicio
-        + len(
-            ordenadas
-        )
-        - 1
+    ultima_datos = (
+        fila_inicio + len(ordenadas) - 1
+        if ordenadas
+        else fila_inicio
     )
-
-    if not ordenadas:
-        ultima_fila_datos = fila_inicio
 
     hoja.cell(
         fila_total,
         6,
-    ).value = (
-        "TOTAL TIEMPOS PERDIDOS AREA"
-    )
-
+    ).value = "TOTAL TIEMPOS PERDIDOS AREA"
     hoja.cell(
         fila_total,
         7,
-    ).value = (
-        f"=SUM(G{fila_inicio}:G{ultima_fila_datos})"
+    ).value = f"=SUM(G{fila_inicio}:G{ultima_datos})"
+
+    hoja["J4"] = "PARETO 80/20"
+    hoja["J5"] = "EVENTOS 20%"
+    hoja["K5"] = (
+        f"=COUNTA(D{fila_inicio}:D{ultima_datos})*20%"
+    )
+    hoja["J6"] = "TIEMPO 80 %"
+    hoja["K6"] = f"=G{fila_total}*80%"
+
+
+def actualizar_mes_anio_reporte(
+    workbook,
+    mes: int,
+    anio: int,
+) -> None:
+    for hoja in workbook.worksheets:
+        for fila in range(1, min(15, hoja.max_row) + 1):
+            for columna in range(1, min(12, hoja.max_column) + 1):
+                valor = normalizar(
+                    hoja.cell(fila, columna).value
+                )
+
+                if valor == "MES":
+                    destino = hoja.cell(fila, columna + 1)
+
+                    if not es_merged_cell(destino):
+                        destino.value = MESES_ES[mes].capitalize()
+
+                if valor == "ANO" or valor == "ANIO":
+                    destino = hoja.cell(fila, columna + 1)
+
+                    if not es_merged_cell(destino):
+                        destino.value = anio
+
+
+def diligenciar_formato_tiempos(
+    plantilla: Path,
+    salida: Path,
+    agregados: dict[
+        str,
+        dict[tuple[date, str], dict[str, Any]],
+    ],
+    fallas_por_maquina: dict[str, list[dict[str, Any]]],
+    periodo: list[date],
+    mes: int,
+    anio: int,
+) -> None:
+    load_workbook, _, _ = _openpyxl()
+
+    shutil.copy2(plantilla, salida)
+
+    workbook = load_workbook(
+        salida,
+        keep_vba=salida.suffix.lower() == ".xlsm",
     )
 
-    hoja[
-        "J4"
-    ] = "PARETO 80/20"
+    try:
+        for categoria, nombre_hoja in HOJAS_DESTINO_TIEMPOS.items():
+            llenar_matriz(
+                buscar_hoja(workbook, nombre_hoja),
+                agregados[categoria],
+                periodo,
+                incluir_total_dia=False,
+            )
 
-    hoja[
-        "J5"
-    ] = "EVENTOS 20%"
+        llenar_trabajos_realizados(
+            workbook,
+            fallas_por_maquina,
+        )
 
-    hoja[
-        "K5"
-    ] = (
-        f"=COUNTA(D{fila_inicio}:D{ultima_fila_datos})*20%"
-    )
+        actualizar_mes_anio_reporte(
+            workbook,
+            mes,
+            anio,
+        )
 
-    hoja[
-        "J6"
-    ] = "TIEMPO 80 %"
+        workbook.save(salida)
 
-    hoja[
-        "K6"
-    ] = (
-        f"=G{fila_total}*80%"
-    )
+    finally:
+        workbook.close()
 
 
 def diligenciar_pareto(
@@ -2623,188 +1449,90 @@ def diligenciar_pareto(
     salida: Path,
     agregados: dict[
         str,
-        dict[
-            tuple[int, str],
-            dict[str, Any],
-        ],
+        dict[tuple[date, str], dict[str, Any]],
     ],
-    fallas_por_maquina: dict[
-        str,
-        list[dict[str, Any]],
-    ],
-    fechas_periodo: list[date],
+    fallas_por_maquina: dict[str, list[dict[str, Any]]],
+    periodo: list[date],
+    mes: int,
+    anio: int,
 ) -> None:
     load_workbook, _, _ = _openpyxl()
 
-    shutil.copy2(
-        plantilla,
-        salida,
-    )
-
-    keep_vba = (
-        salida.suffix.lower()
-        == ".xlsm"
-    )
+    shutil.copy2(plantilla, salida)
 
     workbook = load_workbook(
         salida,
-        keep_vba=keep_vba,
+        keep_vba=salida.suffix.lower() == ".xlsm",
     )
 
     try:
-        hoja_tiempos = buscar_hoja_por_nombre(
-            workbook,
-            "TIEMPOS PERDIDOS",
-        )
-
         llenar_matriz(
-            hoja_tiempos,
-            agregados[
-                "correctivo"
-            ],
-            fechas_periodo,
+            buscar_hoja(
+                workbook,
+                "TIEMPOS PERDIDOS",
+            ),
+            agregados["correctivo"],
+            periodo,
+            incluir_total_dia=True,
         )
 
-        fallas = fallas_para_pareto(
+        fallas = todas_fallas_correctivas(
             fallas_por_maquina
         )
 
-        hoja_fallas = buscar_hoja_por_nombre(
-            workbook,
-            "FALLAS TAPAS",
-        )
-
         llenar_fallas_tapas(
-            hoja_fallas,
+            buscar_hoja(
+                workbook,
+                "FALLAS TAPAS",
+            ),
             fallas,
-        )
-
-        hoja_datos = buscar_hoja_por_nombre(
-            workbook,
-            "DATOS PARETO",
         )
 
         llenar_datos_pareto(
-            hoja_datos,
+            buscar_hoja(
+                workbook,
+                "DATOS PARETO",
+            ),
             fallas,
         )
 
-        workbook.save(
-            salida
+        actualizar_mes_anio_reporte(
+            workbook,
+            mes,
+            anio,
         )
+
+        workbook.save(salida)
 
     finally:
         workbook.close()
 
 
-def resumen_proceso(
-    registros: list[dict[str, Any]],
-) -> dict[str, Any]:
-    resumen = {
-        "total_registros":
-            len(
-                registros
-            ),
-        "correctivos":
-            0,
-        "preventivos":
-            0,
-        "cambios":
-            0,
-        "min_correctivo":
-            0,
-        "min_preventivo":
-            0,
-        "min_cambio":
-            0,
-    }
-
-    for registro in registros:
-        categoria = registro[
-            "categoria"
-        ]
-
-        if categoria == "correctivo":
-            resumen[
-                "correctivos"
-            ] += 1
-
-            resumen[
-                "min_correctivo"
-            ] += registro[
-                "minutos"
-            ]
-
-        elif categoria == "preventivo":
-            resumen[
-                "preventivos"
-            ] += 1
-
-            resumen[
-                "min_preventivo"
-            ] += registro[
-                "minutos"
-            ]
-
-        elif categoria == "cambio":
-            resumen[
-                "cambios"
-            ] += 1
-
-            resumen[
-                "min_cambio"
-            ] += registro[
-                "minutos"
-            ]
-
-    return resumen
-
-
 def localizar_plantilla(
-    nombres: list[str],
+    candidatos: list[str],
+    palabras: list[str],
 ) -> Path:
-    formatos = carpeta_formatos()
+    carpeta = carpeta_formatos()
 
-    for nombre in nombres:
-        ruta = formatos / nombre
+    for nombre in candidatos:
+        ruta = carpeta / nombre
 
-        if (
-            ruta.exists()
-            and not ruta.name.startswith(
-                "~$"
-            )
-        ):
+        if ruta.exists() and not ruta.name.startswith("~$"):
             return ruta
 
     archivos = [
         archivo
-        for archivo in (
-            list(
-                formatos.glob(
-                    "*.xlsx"
-                )
-            )
-            + list(
-                formatos.glob(
-                    "*.xlsm"
-                )
-            )
-        )
-        if not archivo.name.startswith(
-            "~$"
-        )
+        for archivo in list(carpeta.glob("*.xlsx"))
+        + list(carpeta.glob("*.xlsm"))
+        if not archivo.name.startswith("~$")
     ]
 
     for archivo in archivos:
-        limpio = normalizar(
-            archivo.name
-        )
+        nombre = normalizar(archivo.name)
 
-        if any(
-            normalizar(
-                palabra
-            ) in limpio
-            for palabra in nombres
+        if all(
+            normalizar(palabra) in nombre
+            for palabra in palabras
         ):
             return archivo
 
@@ -2813,34 +1541,68 @@ def localizar_plantilla(
     )
 
 
+def resumen_proceso(
+    registros: list[dict[str, Any]],
+) -> dict[str, int]:
+    resultado = {
+        "total_registros": len(registros),
+        "correctivos": 0,
+        "preventivos": 0,
+        "cambios": 0,
+        "min_correctivo": 0,
+        "min_preventivo": 0,
+        "min_cambio": 0,
+    }
+
+    for registro in registros:
+        categoria = registro["categoria"]
+
+        if categoria == "correctivo":
+            resultado["correctivos"] += 1
+            resultado["min_correctivo"] += registro["minutos"]
+
+        elif categoria == "preventivo":
+            resultado["preventivos"] += 1
+            resultado["min_preventivo"] += registro["minutos"]
+
+        elif categoria == "cambio":
+            resultado["cambios"] += 1
+            resultado["min_cambio"] += registro["minutos"]
+
+    return resultado
+
+
+def nombre_archivo_salida(
+    tipo: str,
+    mes: int,
+    anio: int,
+) -> str:
+    return (
+        f"{tipo} {MESES_ES[mes]} {anio}.xlsx"
+    )
+
+
 @tiempos_perdidos_bp.route(
     "/",
-    methods=[
-        "GET",
-        "POST",
-    ],
+    methods=["GET", "POST"],
 )
 def index():
     resultado = None
+    ruta_entrada: Path | None = None
 
     if request.method == "POST":
-        archivo = request.files.get(
-            "archivo_entrega"
-        )
+        archivo = request.files.get("archivo_entrega")
 
         if (
             archivo is None
-            or archivo.filename == ""
+            or not archivo.filename
         ):
             flash(
                 "Seleccione el archivo de Entrega de Turno.",
                 "error",
             )
-
             return redirect(
-                url_for(
-                    "tiempos_perdidos.index"
-                )
+                url_for("tiempos_perdidos.index")
             )
 
         extension = Path(
@@ -2852,74 +1614,57 @@ def index():
                 "El archivo debe ser .xlsx o .xlsm.",
                 "error",
             )
-
             return redirect(
-                url_for(
-                    "tiempos_perdidos.index"
-                )
+                url_for("tiempos_perdidos.index")
             )
 
-        identificador = uuid.uuid4().hex[
-            :10
-        ]
-
+        identificador = uuid.uuid4().hex[:10]
         nombre_seguro = secure_filename(
             archivo.filename
         )
-
         ruta_entrada = (
             carpeta_uploads()
             / f"{identificador}_{nombre_seguro}"
         )
 
-        archivo.save(
-            ruta_entrada
-        )
-
         try:
+            archivo.save(ruta_entrada)
+
             lectura = leer_entrega_turno(
                 ruta_entrada
             )
+            registros = lectura["registros"]
 
-            registros = lectura[
-                "registros"
-            ]
-
-            agregados = construir_agregados(
+            mes, anio, periodo = determinar_periodo(
                 registros
             )
 
+            agregados = construir_agregados_diarios(
+                registros
+            )
             fallas_por_maquina = construir_fallas_correctivas(
                 registros
             )
-
 
             plantilla_tiempos = localizar_plantilla(
                 [
                     "TIEMPOS TAPA PLASTICA.xlsx",
                     "TIEMPOS JUNIO 2026 TAPA PLASTICA IBERPLAST.xlsx",
-                    "TIEMPOS",
-                ]
+                ],
+                ["TIEMPOS", "TAPA", "PLASTICA"],
             )
 
             plantilla_pareto = localizar_plantilla(
                 [
                     "PARETO 80-20 TAPAS.xlsx",
                     "PARETO 80-20 TAPAS JUNIO 2026.xlsx",
-                    "PARETO",
-                ]
-            )
-
-            mes, anio, fechas_periodo = (
-                determinar_periodo_reporte(
-                    lectura,
-                    archivo.filename,
-                )
+                ],
+                ["PARETO", "TAPAS"],
             )
 
             salida_tiempos = (
                 carpeta_salidas()
-                / nombre_salida_reporte(
+                / nombre_archivo_salida(
                     "TIEMPOS TAPA PLASTICA",
                     mes,
                     anio,
@@ -2928,7 +1673,7 @@ def index():
 
             salida_pareto = (
                 carpeta_salidas()
-                / nombre_salida_reporte(
+                / nombre_archivo_salida(
                     "PARETO 80-20 TAPAS",
                     mes,
                     anio,
@@ -2940,7 +1685,9 @@ def index():
                 salida_tiempos,
                 agregados,
                 fallas_por_maquina,
-                fechas_periodo,
+                periodo,
+                mes,
+                anio,
             )
 
             diligenciar_pareto(
@@ -2948,66 +1695,54 @@ def index():
                 salida_pareto,
                 agregados,
                 fallas_por_maquina,
-                fechas_periodo,
+                periodo,
+                mes,
+                anio,
             )
 
-            resumen = resumen_proceso(
-                registros
-            )
+            resumen = resumen_proceso(registros)
 
             resultado = {
                 **resumen,
-                "hoja":
-                    lectura[
-                        "hoja"
-                    ],
-                "no_reconocidas":
-                    lectura[
-                        "maquinas_no_reconocidas"
-                    ],
-                "clases_ignoradas":
-                    lectura[
-                        "clases_ignoradas"
-                    ],
-                "archivo_tiempos":
-                    salida_tiempos.name,
-                "archivo_pareto":
-                    salida_pareto.name,
-                "periodo":
-                    (
-                        fechas_periodo[
-                            0
-                        ].strftime(
-                            "%d/%m/%Y"
-                        )
-                        + " - "
-                        + fechas_periodo[
-                            -1
-                        ].strftime(
-                            "%d/%m/%Y"
-                        )
-                    ),
+                "hoja": lectura["hoja"],
+                "no_reconocidas": lectura[
+                    "maquinas_no_reconocidas"
+                ],
+                "clases_ignoradas": lectura[
+                    "clases_ignoradas"
+                ],
+                "archivo_tiempos": salida_tiempos.name,
+                "archivo_pareto": salida_pareto.name,
+                "periodo": (
+                    periodo[0].strftime("%d/%m/%Y")
+                    + " - "
+                    + periodo[-1].strftime("%d/%m/%Y")
+                ),
             }
 
         except Exception as error:
+            import traceback
+
+            traceback.print_exc()
+
             flash(
                 str(error),
                 "error",
             )
 
             return redirect(
-                url_for(
-                    "tiempos_perdidos.index"
-                )
+                url_for("tiempos_perdidos.index")
             )
 
         finally:
-            try:
-                ruta_entrada.unlink(
-                    missing_ok=True
-                )
-            except OSError:
-                pass
+            if (
+                ruta_entrada is not None
+                and ruta_entrada.exists()
+            ):
+                try:
+                    ruta_entrada.unlink()
+                except OSError:
+                    pass
 
     return render_template(
         "tiempos_perdidos.html",
@@ -3016,20 +1751,22 @@ def index():
 
 
 @tiempos_perdidos_bp.route(
-    "/descargar/<nombre>",
+    "/descargar/<path:nombre>",
     methods=["GET"],
 )
 def descargar(nombre: str):
-    nombre_seguro = secure_filename(
+
+    nombre_archivo = Path(
         nombre
-    )
+    ).name
 
     ruta = (
         carpeta_salidas()
-        / nombre_seguro
+        / nombre_archivo
     )
 
     if not ruta.exists():
+
         flash(
             "El archivo solicitado no existe.",
             "error",
@@ -3044,5 +1781,5 @@ def descargar(nombre: str):
     return send_file(
         ruta,
         as_attachment=True,
-        download_name=ruta.name,
+        download_name=nombre_archivo,
     )
