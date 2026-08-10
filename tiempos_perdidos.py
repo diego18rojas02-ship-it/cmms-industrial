@@ -1751,24 +1751,35 @@ def index():
 
 
 @tiempos_perdidos_bp.route(
-    "/descargar/<nombre>",
+    "/descargar/<path:nombre>",
     methods=["GET"],
 )
 def descargar(nombre: str):
-    nombre_seguro = secure_filename(nombre)
-    ruta = carpeta_salidas() / nombre_seguro
+
+    nombre_archivo = Path(
+        nombre
+    ).name
+
+    ruta = (
+        carpeta_salidas()
+        / nombre_archivo
+    )
 
     if not ruta.exists():
+
         flash(
             "El archivo solicitado no existe.",
             "error",
         )
+
         return redirect(
-            url_for("tiempos_perdidos.index")
+            url_for(
+                "tiempos_perdidos.index"
+            )
         )
 
     return send_file(
         ruta,
         as_attachment=True,
-        download_name=ruta.name,
+        download_name=nombre_archivo,
     )

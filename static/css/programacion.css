@@ -1,0 +1,808 @@
+* {
+    box-sizing: border-box;
+}
+
+:root {
+    --fondo: #07101d;
+    --menu: #040b14;
+    --panel: #0e1a2b;
+    --borde: #293e59;
+    --texto: #f5f8fc;
+    --texto-2: #94a9c1;
+    --azul: #198ce8;
+    --azul-2: #3ba6ff;
+    --verde: #22c55e;
+    --amarillo: #facc15;
+    --naranja: #f97316;
+    --rojo: #ef4444;
+}
+
+html,
+body {
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
+}
+
+body {
+    overflow-x: hidden;
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: var(--texto);
+    background:
+        radial-gradient(circle at top right, rgba(25, 140, 232, .09), transparent 28%),
+        var(--fondo);
+}
+
+button,
+select {
+    font: inherit;
+}
+
+.barra-lateral {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 11px;
+    width: 66px;
+    padding: 15px 8px;
+    border-right: 1px solid var(--borde);
+    background: var(--menu);
+}
+
+.menu-item {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    color: #fff;
+    text-decoration: none;
+    font-size: 20px;
+}
+
+.menu-item:hover {
+    border-color: #334c6b;
+    background: #142338;
+}
+
+.menu-item.activo {
+    border-color: var(--azul-2);
+    background: #143a5b;
+}
+
+.pagina {
+    width: calc(100% - 66px);
+    min-height: 100vh;
+    margin-left: 66px;
+    padding: 22px;
+}
+
+.encabezado {
+    margin-bottom: 18px;
+}
+
+.eyebrow {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--azul-2);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .15em;
+}
+
+.encabezado h1 {
+    margin: 0 0 6px;
+    font-size: 27px;
+}
+
+.encabezado p {
+    margin: 0;
+    color: var(--texto-2);
+    font-size: 13px;
+}
+
+.panel {
+    width: min(680px, 100%);
+    margin: 0 auto;
+    padding: 16px;
+    border: 1px solid var(--borde);
+    border-radius: 16px;
+    background:
+        linear-gradient(145deg, rgba(15, 29, 48, .97), rgba(9, 20, 34, .98));
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .16);
+}
+
+.calendario-superior {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 13px;
+}
+
+.fecha-hoy-label {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--azul-2);
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: .12em;
+}
+
+.calendario-superior strong {
+    display: block;
+    font-size: 12px;
+    text-transform: capitalize;
+}
+
+.boton {
+    min-height: 40px;
+    padding: 9px 13px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.boton.principal {
+    background: linear-gradient(135deg, #1b8fe8, #1678c5);
+}
+
+.boton.secundario {
+    border-color: #35506f;
+    background: #13243a;
+}
+
+.boton.limpiar {
+    min-height: 34px;
+    padding: 7px 10px;
+    border-color: #35506f;
+    color: #c6d6e8;
+    background: #0f1f32;
+    font-size: 10px;
+}
+
+.boton.alerta {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    border-color: rgba(250, 204, 21, .38);
+    color: #fde68a;
+    background: rgba(250, 204, 21, .08);
+}
+
+.boton.alerta span {
+    font-size: 9px;
+    font-weight: 500;
+}
+
+.boton.alerta.sin-alertas {
+    opacity: .55;
+}
+
+.calendario-cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.calendario-cabecera strong {
+    min-width: 140px;
+    text-align: center;
+    font-size: 13px;
+}
+
+.boton-icono {
+    display: grid;
+    place-items: center;
+    width: 31px;
+    height: 31px;
+    border: 1px solid #34506f;
+    border-radius: 9px;
+    color: #fff;
+    cursor: pointer;
+    background: #102238;
+    font-size: 18px;
+}
+
+.dias-semana {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 4px;
+}
+
+.dias-semana span {
+    color: var(--texto-2);
+    text-align: center;
+    font-size: 8px;
+    font-weight: 700;
+}
+
+.calendario {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    user-select: none;
+}
+
+.dia-calendario {
+    position: relative;
+    min-height: 52px;
+    padding: 6px;
+    border: 1px solid #263d58;
+    border-radius: 9px;
+    color: #eef5fc;
+    text-align: left;
+    cursor: pointer;
+    background: #0a1727;
+    transition: .14s ease;
+}
+
+.dia-calendario:not(:disabled):hover {
+    border-color: #4d759d;
+    background: #122840;
+}
+
+.dia-calendario.seleccionado {
+    border-color: var(--azul-2);
+    background: linear-gradient(145deg, #17446a, #123451);
+}
+
+.dia-calendario.hoy::after {
+    content: "";
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--azul-2);
+}
+
+.dia-calendario.fin-semana,
+.dia-calendario.festivo,
+.dia-calendario.fuera-semana {
+    opacity: .35;
+    cursor: not-allowed;
+}
+
+.dia-calendario.festivo {
+    border-color: rgba(249, 115, 22, .4);
+}
+
+.dia-calendario.vacio {
+    border: 0;
+    background: transparent;
+}
+
+.numero-dia {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.dia-calendario small {
+    display: block;
+    margin-top: 4px;
+    overflow: hidden;
+    color: #ffbc8b;
+    font-size: 7px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.semana-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 11px;
+    padding-top: 10px;
+    border-top: 1px solid #21364e;
+}
+
+.semana-info span {
+    color: var(--texto-2);
+    font-size: 10px;
+}
+
+.semana-info strong {
+    font-size: 10px;
+}
+
+.acciones-calendario {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 4000;
+    display: grid;
+    place-items: center;
+    padding: 18px;
+}
+
+.modal-fondo {
+    position: absolute;
+    inset: 0;
+    background: rgba(1, 6, 12, .78);
+    backdrop-filter: blur(6px);
+}
+
+.modal-panel {
+    position: relative;
+    z-index: 1;
+    width: min(980px, 100%);
+    max-height: calc(100vh - 36px);
+    overflow-y: auto;
+    padding: 18px;
+    border: 1px solid #35516f;
+    border-radius: 17px;
+    background: linear-gradient(145deg, #101f33, #091522);
+    box-shadow: 0 28px 70px rgba(0, 0, 0, .55);
+}
+
+.mayores-modal {
+    width: min(760px, 100%);
+}
+
+.modal-cabecera {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 15px;
+}
+
+.modal-cabecera h2 {
+    margin: 0 0 4px;
+    font-size: 20px;
+}
+
+.modal-cabecera p {
+    margin: 0;
+    color: var(--texto-2);
+    font-size: 10px;
+}
+
+.cerrar-modal {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid #34506f;
+    border-radius: 9px;
+    color: #d3e0ed;
+    cursor: pointer;
+    background: #102238;
+    font-size: 20px;
+}
+
+.barra-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 14px;
+}
+
+.tabla-contenedor {
+    overflow-x: auto;
+    border: 1px solid #2c435f;
+    border-radius: 11px;
+}
+
+table {
+    width: 100%;
+    min-width: 620px;
+    border-collapse: collapse;
+}
+
+thead {
+    background: #091522;
+}
+
+th,
+td {
+    padding: 11px 12px;
+    border-bottom: 1px solid #22384f;
+    text-align: left;
+}
+
+th {
+    color: var(--texto-2);
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+td {
+    color: #eaf2fb;
+    font-size: 11px;
+}
+
+tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.fila-mayor {
+    background: rgba(59, 166, 255, .035);
+}
+
+.etiqueta-mayor {
+    display: inline-block;
+    margin-left: 7px;
+    padding: 2px 5px;
+    border-radius: 999px;
+    color: #bfdbfe;
+    font-size: 7px;
+    background: #153451;
+}
+
+.selector-dia {
+    min-height: 34px;
+    padding: 6px 8px;
+    border: 1px solid #3a5879;
+    border-radius: 8px;
+    color: #fff;
+    background: #091827;
+}
+
+.sin-resultados {
+    padding: 24px;
+    color: var(--texto-2);
+    text-align: center;
+}
+
+.lista-mayores {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+    gap: 9px;
+}
+
+.mayor-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 94px;
+    padding: 11px;
+    border: 1px solid #314967;
+    border-radius: 11px;
+    cursor: pointer;
+    background: #0b1929;
+}
+
+.mayor-card.vencido {
+    border-color: rgba(239, 68, 68, .48);
+}
+
+.mayor-card.proximo {
+    border-color: rgba(250, 204, 21, .48);
+}
+
+.mayor-card.seleccionado {
+    border-color: var(--azul-2);
+    background: #11304d;
+}
+
+.mayor-card input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--azul);
+}
+
+.mayor-info {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.mayor-titulo {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.mayor-titulo strong {
+    overflow: hidden;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mayor-info > span {
+    color: #c6d5e5;
+    font-size: 10px;
+}
+
+.mayor-info small {
+    color: var(--texto-2);
+    font-size: 9px;
+}
+
+.badge {
+    padding: 3px 6px;
+    border-radius: 999px;
+    font-size: 8px;
+}
+
+.badge.vencido {
+    color: #fecaca;
+    background: rgba(239, 68, 68, .12);
+}
+
+.badge.proximo {
+    color: #fde68a;
+    background: rgba(250, 204, 21, .11);
+}
+
+.agregar-texto {
+    flex: 0 0 auto;
+    color: #8ecbff;
+    font-size: 9px;
+}
+
+.acciones-mayores {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 14px;
+}
+
+.sin-mayores {
+    grid-column: 1 / -1;
+    padding: 24px;
+    border: 1px dashed #334c68;
+    border-radius: 11px;
+    color: var(--texto-2);
+    text-align: center;
+    font-size: 11px;
+}
+
+.oculto {
+    display: none !important;
+}
+
+@media (max-width: 760px) {
+    .barra-lateral {
+        width: 58px;
+        padding-inline: 6px;
+    }
+
+    .menu-item {
+        width: 42px;
+        height: 42px;
+        font-size: 18px;
+    }
+
+    .pagina {
+        width: calc(100% - 58px);
+        margin-left: 58px;
+        padding: 14px 9px 26px;
+    }
+
+    .panel {
+        padding: 13px;
+    }
+
+    .calendario-superior {
+        align-items: flex-start;
+    }
+
+    .dia-calendario {
+        min-height: 46px;
+        padding: 5px;
+    }
+
+    .dia-calendario small {
+        display: none;
+    }
+
+    .semana-info {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .acciones-calendario .boton {
+        width: 100%;
+    }
+
+    .modal {
+        align-items: end;
+        padding: 0;
+    }
+
+    .modal-panel {
+        width: 100%;
+        max-height: 92vh;
+        border-right: 0;
+        border-bottom: 0;
+        border-left: 0;
+        border-radius: 18px 18px 0 0;
+    }
+
+    .lista-mayores {
+        grid-template-columns: 1fr;
+    }
+
+    .barra-acciones .boton {
+        flex: 1;
+        min-width: 135px;
+    }
+}
+
+@media (max-width: 430px) {
+    .calendario {
+        gap: 3px;
+    }
+
+    .dias-semana {
+        gap: 3px;
+    }
+
+    .dia-calendario {
+        min-height: 42px;
+        border-radius: 7px;
+    }
+
+    .numero-dia {
+        font-size: 11px;
+    }
+}
+
+
+/* ===== CALENDARIO MÁS LIMPIO Y PROFESIONAL ===== */
+
+.calendario-panel {
+    width: min(620px, 100%);
+}
+
+.calendario-cabecera strong {
+    min-width: 170px;
+    font-size: 14px;
+    letter-spacing: .01em;
+}
+
+.boton-icono {
+    border-radius: 50%;
+    transition: transform .18s ease, background .18s ease, border-color .18s ease;
+}
+
+.boton-icono:hover {
+    transform: scale(1.06);
+    border-color: #4B79A1;
+    background: #17314D;
+}
+
+.dia-calendario {
+    min-height: 50px;
+    padding: 6px;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, .08);
+    transition:
+        transform .18s ease,
+        box-shadow .18s ease,
+        background .18s ease,
+        border-color .18s ease;
+}
+
+.dia-calendario:not(:disabled):hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, .16);
+}
+
+.dia-calendario.seleccionado {
+    border-color: #4EA7E8;
+    background: linear-gradient(145deg, #1A466C, #123A5C);
+    box-shadow: 0 7px 18px rgba(30, 144, 255, .16);
+}
+
+.dia-calendario.hoy {
+    border: 2px solid #6BC1FF;
+    background: linear-gradient(145deg, #1C527F, #133E61);
+    box-shadow:
+        0 0 0 3px rgba(107, 193, 255, .08),
+        0 8px 22px rgba(21, 120, 190, .22);
+}
+
+.dia-calendario.hoy .numero-dia {
+    color: #FFFFFF;
+    font-size: 14px;
+}
+
+.texto-hoy {
+    display: block !important;
+    margin-top: 4px !important;
+    color: #BDE7FF !important;
+    font-size: 7px !important;
+    font-weight: 800;
+    letter-spacing: .12em;
+}
+
+.punto-festivo {
+    position: absolute;
+    right: 6px;
+    bottom: 6px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #F59E0B;
+}
+
+.dia-calendario.festivo {
+    border-color: rgba(245, 158, 11, .45);
+}
+
+.dia-calendario.fin-semana,
+.dia-calendario.fuera-semana {
+    opacity: .30;
+}
+
+.semana-info {
+    margin-top: 13px;
+    padding: 11px 12px;
+    border: 1px solid #2C425C;
+    border-radius: 10px;
+    background: rgba(7, 17, 29, .45);
+}
+
+/* ===== TABLA EN PANTALLA ===== */
+
+.tabla-contenedor {
+    border: 1px solid #D9E2EC;
+    border-radius: 12px;
+    background: #FFFFFF;
+}
+
+table {
+    background: #FFFFFF;
+}
+
+thead {
+    background: #DCEAF7;
+}
+
+th {
+    padding: 12px 13px;
+    border-bottom: 1px solid #C8D6E5;
+    color: #1F3B57;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .05em;
+}
+
+td {
+    padding: 12px 13px;
+    border-bottom: 1px solid #E7EDF3;
+    color: #243447;
+    font-size: 11px;
+}
+
+tbody tr:nth-child(even) {
+    background: #F8FAFC;
+}
+
+tbody tr:hover {
+    background: #EEF5FB;
+}
+
+.fila-mayor {
+    background: #F1F7FD !important;
+}
+
+.etiqueta-mayor {
+    color: #315B7D;
+    background: #E2EEF9;
+}

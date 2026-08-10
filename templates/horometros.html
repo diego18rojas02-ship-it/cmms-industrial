@@ -1,54 +1,656 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>Horómetros</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horómetros | CMMS Industrial</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/horometros.css') }}">
 </head>
 <body>
 
-<h1>Registro de Horómetros</h1>
+{% include 'menu.html' %}
 
-{% if mensaje %}
-<p>{{ mensaje }}</p>
+<main class="pagina">
+
+    <header class="encabezado">
+        <div>
+            <span class="eyebrow">CMMS INDUSTRIAL</span>
+            <h1>Registro de máquinas</h1>
+            <p>Actualice los horómetros diarios o registre una intervención de mantenimiento.</p>
+        </div>
+    </header>
+
+    <section class="selector-modo">
+
+        <a
+            href="{{ url_for('horometros', modo='horometro') }}"
+            class="boton-modo {% if modo_registro == 'horometro' %}activo{% endif %}"
+        >
+            <span class="modo-icono">⏱️</span>
+            <div>
+                <strong>Horómetros</strong>
+                <small>Registro diario rápido</small>
+            </div>
+        </a>
+
+        <a
+            href="{{ url_for('horometros', modo='mantenimiento') }}"
+            class="boton-modo {% if modo_registro == 'mantenimiento' %}activo{% endif %}"
+        >
+            <span class="modo-icono">🛠️</span>
+            <div>
+                <strong>Mantenimiento</strong>
+                <small>Registrar una intervención</small>
+            </div>
+        </a>
+
+    </section>
+
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% for categoria, texto in mensajes %}
+            <div class="mensaje {{ categoria }}">{{ texto }}</div>
+        {% endfor %}
+    {% endwith %}
+
+    {% if mensaje %}
+        <div class="mensaje exito">{{ mensaje }}</div>
+    {% endif %}
+
+    <section class="rejilla-maquinas">
+
+        {% for maquina in maquinas %}
+
+            {% set horometro_tarjeta =
+                maquina.horometro
+                if maquina.horometro is defined
+                else maquina.horometro_actual | default(0)
+            %}
+
+            <a
+                href="{{ url_for('horometros', maquina_id=maquina.id, modo=modo_registro) }}"
+                class="tarjeta-maquina
+                    {% if maquina_seleccionada and maquina_seleccionada.id == maquina.id %} seleccionada{% endif %}
+                    {% if maquina.registrada_hoy and modo_registro == 'horometro' %} registrada{% endif %}"
+            >
+                <div class="tarjeta-superior">
+                    <span class="estado-punto"></span>
+                    <h2>{{ maquina.nombre }}</h2>
+
+                    {% if modo_registro == "horometro" and maquina.registrada_hoy %}
+                        <span class="check-listo">✓</span>
+                    {% endif %}
+                </div>
+
+                <div class="horometro-tarjeta">
+                    <span>Último</span>
+                    <strong>{{ "{:,.0f}".format(horometro_tarjeta).replace(",", ".") }} h</strong>
+                </div>
+
+                {% if modo_registro == "horometro" %}
+                    {% if maquina.registrada_hoy %}
+                        <small class="estado-registro completado">Registrado hoy</small>
+                    {% else %}
+                        <small class="estado-registro pendiente">Pendiente</small>
+                    {% endif %}
+                {% else %}
+                    <small class="estado-registro mantenimiento">Registrar mantenimiento</small>
+                {% endif %}
+            </a>
+
+        {% endfor %}
+
+    </section>
+
+</main>
+
+{% if maquina_seleccionada %}
+
+    {% set anterior =
+        maquina_seleccionada.horometro
+        if maquina_seleccionada.horometro is defined
+        else maquina_seleccionada.horometro_actual | default(0)
+    %}
+
+    {% set ns = namespace(codigos=[]) %}
+
+    {% for control in maquina_seleccionada.controles %}
+        {% if control is string %}
+            {% set _ = ns.codigos.append(control) %}
+        {% elif control.codigo is defined %}
+            {% set _ = ns.codigos.append(control.codigo) %}
+        {% endif %}
+    {% endfor %}
+
+    <div class="modal-registro" id="modalRegistro">
+
+        <a
+            href="{{ url_for('horometros', modo=modo_registro) }}"
+            class="fondo-modal"
+            aria-label="Cerrar"
+        ></a>
+
+        <section class="panel-formulario modal-contenido">
+
+            <a
+                href="{{ url_for('horometros', modo=modo_registro) }}"
+                class="cerrar-modal"
+                title="Cerrar"
+            >
+                ×
+            </a>
+
+            <div class="formulario-cabecera">
+
+                <div>
+                    <span class="formulario-etiqueta">
+                        {% if modo_registro == "mantenimiento" %}
+                            REGISTRO DE MANTENIMIENTO
+                        {% else %}
+                            REGISTRO DE HORÓMETRO
+                        {% endif %}
+                    </span>
+
+                    <h2>{{ maquina_seleccionada.nombre }}</h2>
+                </div>
+
+                <div class="referencia-cabecera">
+                    <small>Último</small>
+                    <strong>{{ "{:,.0f}".format(anterior).replace(",", ".") }} h</strong>
+                </div>
+
+            </div>
+
+            <form method="POST" id="formHorometro" autocomplete="off">
+
+                <input type="hidden" name="maquina_id" value="{{ maquina_seleccionada.id }}">
+                <input type="hidden" name="modo_registro" value="{{ modo_registro }}">
+
+                {% if modo_registro == "horometro" %}
+
+                    <div class="registro-rapido">
+
+                        <label for="horometro_actual">
+                            Nuevo horómetro
+                        </label>
+
+                        <div class="entrada-horometro">
+                            <input
+                                type="text"
+                                id="horometro_actual"
+                                name="horometro_actual"
+                                inputmode="numeric"
+                                pattern="[0-9]+"
+                                placeholder="{{ anterior }}"
+                                required
+                                autofocus
+                            >
+                            <span>h</span>
+                        </div>
+
+                        <small class="ayuda-campo">
+                            Ingrese el valor y presione Enter para guardar y pasar a la siguiente máquina.
+                        </small>
+
+                    </div>
+
+                    <button
+                        type="button"
+                        class="boton-desplegar"
+                        id="botonDesplegarMantenimiento"
+                    >
+                        <span>＋</span>
+                        Registrar mantenimiento en esta máquina
+                    </button>
+
+                    <input
+                        type="checkbox"
+                        id="ejecutoMantenimiento"
+                        name="ejecuto_mantenimiento"
+                        value="si"
+                        class="check-oculto"
+                    >
+
+                    <fieldset
+                        id="camposMantenimiento"
+                        class="campos-mantenimiento oculto"
+                        disabled
+                    >
+
+                {% else %}
+
+                    <div class="referencia-mantenimiento">
+                        <span>Último horómetro registrado</span>
+                        <strong>{{ "{:,.0f}".format(anterior).replace(",", ".") }} h</strong>
+                        <small>No se modificará el horómetro actual.</small>
+                    </div>
+
+                    <fieldset
+                        id="camposMantenimiento"
+                        class="campos-mantenimiento"
+                    >
+
+                {% endif %}
+
+                    <div class="campos-dobles">
+
+                        <div class="campo">
+                            <label for="horometro_intervencion">
+                                Horómetro intervención
+                            </label>
+
+                            <input
+                                type="text"
+                                id="horometro_intervencion"
+                                name="horometro_intervencion"
+                                inputmode="numeric"
+                                pattern="[0-9]+"
+                                placeholder="{{ ultimo_horometro_intervencion | default(anterior) }}"
+                            >
+                        </div>
+
+                        <div class="campo">
+                            <label for="fecha_intervencion">
+                                Fecha
+                            </label>
+
+                            <input
+                                type="date"
+                                id="fecha_intervencion"
+                                name="fecha_intervencion"
+                                value="{{ fecha_hoy }}"
+                            >
+                        </div>
+
+                        <div class="campo campo-ancho">
+                            <label for="frecuencia">
+                                Frecuencia
+                            </label>
+
+                            <select id="frecuencia" name="frecuencia">
+                                <option value="">Seleccione</option>
+                                <option value="quincenal">Quincenal</option>
+                                <option value="mensual">Mensual</option>
+
+                                {% if "punzones" in ns.codigos %}
+                                    <option value="trimestral">Trimestral</option>
+                                {% endif %}
+
+                                {% if "distribuidores" in ns.codigos %}
+                                    <option value="semestral">Semestral</option>
+                                {% endif %}
+
+                                {% if "bridas" in ns.codigos %}
+                                    <option value="anual">Anual</option>
+                                {% endif %}
+                            </select>
+                        </div>
+
+                    </div>
+
+                    {% if "distribuidores" in ns.codigos %}
+
+                        <div
+                            id="bloqueNovedadDistribuidor"
+                            class="opcion-check oculto"
+                        >
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    id="novedadDistribuidor"
+                                    name="novedad_distribuidor"
+                                    value="si"
+                                >
+                                <span>Novedad en distribuidor</span>
+                            </label>
+                        </div>
+
+                        <div
+                            id="camposNovedadDistribuidor"
+                            class="campo campo-novedad oculto"
+                        >
+                            <label for="distribuidor_novedad">
+                                Distribuidor intervenido
+                            </label>
+
+                            <select
+                                id="distribuidor_novedad"
+                                name="distribuidor_novedad"
+                                disabled
+                            >
+                                <option value="">Seleccione</option>
+                                <option value="agua">Agua</option>
+                                <option value="aceite">Aceite</option>
+                            </select>
+                        </div>
+
+                    {% endif %}
+
+                    {% if "aceite" in ns.codigos %}
+
+                        <div class="opcion-check">
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    id="cambio_aceite"
+                                    name="cambio_aceite"
+                                    value="si"
+                                >
+                                <span>Cambio de aceite</span>
+                            </label>
+                        </div>
+
+                    {% endif %}
+
+                </fieldset>
+
+                <button
+                    type="submit"
+                    class="boton-guardar"
+                >
+                    {% if modo_registro == "mantenimiento" %}
+                        Guardar mantenimiento
+                    {% else %}
+                        Guardar y continuar
+                    {% endif %}
+                </button>
+
+                <div class="atajo">
+                    <kbd>Enter</kbd>
+                    <span>
+                        {% if modo_registro == "mantenimiento" %}
+                            Guarda el mantenimiento y abre la siguiente máquina
+                        {% else %}
+                            Guarda el horómetro y abre la siguiente máquina
+                        {% endif %}
+                    </span>
+                </div>
+
+            </form>
+
+        </section>
+
+    </div>
+
 {% endif %}
 
-<form method="POST">
+<script>
+"use strict";
 
-    <label>Máquina:</label>
-    <select name="maquina">
-        {% for m in maquinas %}
-        <option value="{{ m.codigo }}">{{ m.nombre }}</option>
-        {% endfor %}
-    </select>
+const formulario = document.getElementById("formHorometro");
+const modoRegistro = "{{ modo_registro }}";
+const horometroActual = document.getElementById("horometro_actual");
+const horometroIntervencion = document.getElementById("horometro_intervencion");
+const fechaIntervencion = document.getElementById("fecha_intervencion");
+const frecuencia = document.getElementById("frecuencia");
+const cambioAceite = document.getElementById("cambio_aceite");
+const camposMantenimiento = document.getElementById("camposMantenimiento");
+const ejecutoMantenimiento = document.getElementById("ejecutoMantenimiento");
+const botonDesplegar = document.getElementById("botonDesplegarMantenimiento");
+const bloqueNovedadDistribuidor = document.getElementById("bloqueNovedadDistribuidor");
+const novedadDistribuidor = document.getElementById("novedadDistribuidor");
+const camposNovedadDistribuidor = document.getElementById("camposNovedadDistribuidor");
+const distribuidorNovedad = document.getElementById("distribuidor_novedad");
 
-    <br><br>
+const horometroReferencia = Number(
+    "{{ anterior if maquina_seleccionada else 0 }}"
+);
 
-    <label>Horómetro:</label>
-    <input type="number" name="horometro" required>
+const ultimoIntervencion = Number(
+    "{{ ultimo_horometro_intervencion | default(0) }}"
+);
 
-    <br><br>
+let mantenimientoVisible = modoRegistro === "mantenimiento";
 
-    <button type="submit">Guardar</button>
+function soloNumeros(campo) {
+    if (!campo) return;
 
-</form>
+    campo.addEventListener("input", function () {
+        this.value = this.value.replace(/[^0-9]/g, "");
+        this.setCustomValidity("");
+    });
+}
 
-<h2>Registros</h2>
+soloNumeros(horometroActual);
+soloNumeros(horometroIntervencion);
 
-<table border="1">
-    <tr>
-        <th>Máquina</th>
-        <th>Horómetro</th>
-    </tr>
+function configurarMantenimientoVisible(visible) {
+    mantenimientoVisible = visible;
 
-    {% for r in registros %}
-    <tr>
-        <td>{{ r.maquina }}</td>
-        <td>{{ r.horometro }}</td>
-    </tr>
-    {% endfor %}
-</table>
+    if (!camposMantenimiento) return;
 
-<br>
-<a href="/">⬅ Volver</a>
+    camposMantenimiento.classList.toggle("oculto", !visible);
+    camposMantenimiento.disabled = !visible;
+
+    if (ejecutoMantenimiento) {
+        ejecutoMantenimiento.checked = visible;
+    }
+
+    if (horometroIntervencion) {
+        horometroIntervencion.required = visible;
+    }
+
+    if (fechaIntervencion) {
+        fechaIntervencion.required = visible;
+    }
+
+    if (botonDesplegar) {
+        botonDesplegar.classList.toggle("activo", visible);
+
+        botonDesplegar.innerHTML = visible
+            ? "<span>−</span> Ocultar mantenimiento"
+            : "<span>＋</span> Registrar mantenimiento en esta máquina";
+    }
+}
+
+function actualizarFrecuencia() {
+    if (!frecuencia) return;
+
+    const semestral = frecuencia.value === "semestral";
+
+    if (bloqueNovedadDistribuidor) {
+        bloqueNovedadDistribuidor.classList.toggle("oculto", !semestral);
+    }
+
+    if (!semestral && novedadDistribuidor) {
+        novedadDistribuidor.checked = false;
+    }
+
+    actualizarNovedad();
+}
+
+function actualizarNovedad() {
+    if (
+        !novedadDistribuidor
+        || !camposNovedadDistribuidor
+        || !distribuidorNovedad
+    ) {
+        return;
+    }
+
+    const activo = novedadDistribuidor.checked;
+
+    camposNovedadDistribuidor.classList.toggle("oculto", !activo);
+    distribuidorNovedad.disabled = !activo;
+    distribuidorNovedad.required = activo;
+
+    if (!activo) {
+        distribuidorNovedad.value = "";
+        distribuidorNovedad.setCustomValidity("");
+    }
+}
+
+if (botonDesplegar) {
+    botonDesplegar.addEventListener("click", function () {
+        configurarMantenimientoVisible(!mantenimientoVisible);
+
+        if (mantenimientoVisible && horometroIntervencion) {
+            setTimeout(function () {
+                horometroIntervencion.focus();
+                horometroIntervencion.select();
+            }, 80);
+        }
+    });
+}
+
+if (frecuencia) {
+    frecuencia.addEventListener("change", actualizarFrecuencia);
+}
+
+if (novedadDistribuidor) {
+    novedadDistribuidor.addEventListener("change", actualizarNovedad);
+}
+
+function validarFormulario() {
+    if (!formulario) return false;
+
+    let actual = horometroReferencia;
+
+    if (modoRegistro === "horometro" && horometroActual) {
+        actual = Number(horometroActual.value);
+
+        if (!horometroActual.value) {
+            horometroActual.setCustomValidity("Ingrese el nuevo horómetro.");
+            horometroActual.reportValidity();
+            return false;
+        }
+
+        if (actual < horometroReferencia) {
+            horometroActual.setCustomValidity(
+                "Debe ser igual o mayor que " + horometroReferencia + "."
+            );
+            horometroActual.reportValidity();
+            return false;
+        }
+
+        horometroActual.setCustomValidity("");
+    }
+
+    const validarMantenimiento =
+        modoRegistro === "mantenimiento"
+        || mantenimientoVisible;
+
+    if (validarMantenimiento && horometroIntervencion) {
+        const intervencion = Number(horometroIntervencion.value);
+
+        if (!horometroIntervencion.value) {
+            horometroIntervencion.setCustomValidity(
+                "Ingrese el horómetro de intervención."
+            );
+            horometroIntervencion.reportValidity();
+            return false;
+        }
+
+        if (intervencion < ultimoIntervencion) {
+            horometroIntervencion.setCustomValidity(
+                "Debe ser igual o mayor que " + ultimoIntervencion + "."
+            );
+            horometroIntervencion.reportValidity();
+            return false;
+        }
+
+        if (intervencion > actual) {
+            horometroIntervencion.setCustomValidity(
+                "No puede ser mayor que " + actual + "."
+            );
+            horometroIntervencion.reportValidity();
+            return false;
+        }
+
+        horometroIntervencion.setCustomValidity("");
+
+        if (!fechaIntervencion || !fechaIntervencion.value) {
+            if (fechaIntervencion) {
+                fechaIntervencion.setCustomValidity(
+                    "Seleccione la fecha de intervención."
+                );
+                fechaIntervencion.reportValidity();
+            }
+            return false;
+        }
+
+        fechaIntervencion.setCustomValidity("");
+
+        if (
+            !frecuencia.value
+            && !(cambioAceite && cambioAceite.checked)
+        ) {
+            frecuencia.setCustomValidity(
+                "Seleccione una frecuencia o marque cambio de aceite."
+            );
+            frecuencia.reportValidity();
+            return false;
+        }
+
+        frecuencia.setCustomValidity("");
+
+        if (
+            novedadDistribuidor
+            && novedadDistribuidor.checked
+            && distribuidorNovedad
+            && distribuidorNovedad.value === ""
+        ) {
+            distribuidorNovedad.setCustomValidity(
+                "Seleccione el distribuidor intervenido."
+            );
+            distribuidorNovedad.reportValidity();
+            return false;
+        }
+
+        if (distribuidorNovedad) {
+            distribuidorNovedad.setCustomValidity("");
+        }
+    }
+
+    return formulario.reportValidity();
+}
+
+if (formulario) {
+    formulario.addEventListener("submit", function (evento) {
+        if (!validarFormulario()) {
+            evento.preventDefault();
+        }
+    });
+
+    formulario.addEventListener("keydown", function (evento) {
+        if (
+            evento.key !== "Enter"
+            || evento.target.tagName === "BUTTON"
+            || evento.target.tagName === "TEXTAREA"
+        ) {
+            return;
+        }
+
+        evento.preventDefault();
+
+        if (validarFormulario()) {
+            formulario.submit();
+        }
+    });
+}
+
+if (modoRegistro === "mantenimiento") {
+    configurarMantenimientoVisible(true);
+
+    if (horometroIntervencion) {
+        setTimeout(function () {
+            horometroIntervencion.focus();
+            horometroIntervencion.select();
+        }, 120);
+    }
+} else {
+    configurarMantenimientoVisible(false);
+
+    if (horometroActual) {
+        setTimeout(function () {
+            horometroActual.focus();
+            horometroActual.select();
+        }, 120);
+    }
+}
+
+actualizarFrecuencia();
+actualizarNovedad();
+</script>
 
 </body>
 </html>

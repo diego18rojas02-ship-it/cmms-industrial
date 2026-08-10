@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Tiempos perdidos | CMMS Industrial</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/tiempos_perdidos.css') }}"
+    >
+</head>
+
+<body>
+
+{% include 'menu.html' %}
+
+
+<main class="pagina">
+
+    <header class="encabezado">
+
+        <span class="eyebrow">
+            CMMS INDUSTRIAL
+        </span>
+
+        <h1>
+            Tiempos perdidos
+        </h1>
+
+        <p>
+            Cargue la Entrega de Turno de Plástica para diligenciar
+            automáticamente los formatos de tiempos perdidos y Pareto 80/20.
+        </p>
+
+    </header>
+
+
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+
+        {% for categoria, mensaje in mensajes %}
+
+            <div class="mensaje {{ categoria }}">
+                {{ mensaje }}
+            </div>
+
+        {% endfor %}
+
+    {% endwith %}
+
+
+    <section class="panel carga-panel">
+
+        <form
+            method="POST"
+            enctype="multipart/form-data"
+            id="formCarga"
+        >
+
+            <label
+                class="zona-carga"
+                id="zonaCarga"
+                for="archivo_entrega"
+            >
+
+                <input
+                    type="file"
+                    id="archivo_entrega"
+                    name="archivo_entrega"
+                    accept=".xlsx,.xlsm"
+                    required
+                >
+
+                <div class="archivo-icono">
+                    📄
+                </div>
+
+                <strong>
+                    Cargar Entrega de Turno
+                </strong>
+
+                <span>
+                    Arrastre el Excel aquí o haga clic para seleccionarlo.
+                </span>
+
+                <small>
+                    Se procesará únicamente la hoja correspondiente a Plástica.
+                </small>
+
+                <div
+                    class="archivo-seleccionado"
+                    id="archivoSeleccionado"
+                >
+                    Ningún archivo seleccionado
+                </div>
+
+            </label>
+
+
+            <div class="reglas">
+
+                <div>
+                    <span class="regla-codigo">
+                        PM01
+                    </span>
+
+                    <span>
+                        Correctivo
+                    </span>
+                </div>
+
+                <div>
+                    <span class="regla-codigo">
+                        PM01B
+                    </span>
+
+                    <span>
+                        Preventivo
+                    </span>
+                </div>
+
+                <div>
+                    <span class="regla-codigo">
+                        PM02
+                    </span>
+
+                    <span>
+                        Preventivo
+                    </span>
+                </div>
+
+                <div>
+                    <span class="regla-codigo">
+                        PM03
+                    </span>
+
+                    <span>
+                        Cambio
+                    </span>
+                </div>
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="boton-procesar"
+                id="botonProcesar"
+            >
+                Procesar archivo
+            </button>
+
+        </form>
+
+    </section>
+
+
+    {% if resultado %}
+
+        <section class="panel resultado-panel">
+
+            <div class="resultado-cabecera">
+
+                <div>
+                    <span class="estado-ok">
+                        ✓ Procesamiento terminado
+                    </span>
+
+                    <h2>
+                        Resumen
+                    </h2>
+
+                    <p>
+                        Hoja procesada:
+                        <strong>
+                            {{ resultado.hoja }}
+                        </strong>
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="kpis">
+
+                <article class="kpi">
+                    <span>
+                        Correctivos
+                    </span>
+
+                    <strong>
+                        {{ resultado.correctivos }}
+                    </strong>
+
+                    <small>
+                        {{ "{:,}".format(resultado.min_correctivo).replace(",", ".") }}
+                        min
+                    </small>
+                </article>
+
+
+                <article class="kpi">
+                    <span>
+                        Preventivos
+                    </span>
+
+                    <strong>
+                        {{ resultado.preventivos }}
+                    </strong>
+
+                    <small>
+                        {{ "{:,}".format(resultado.min_preventivo).replace(",", ".") }}
+                        min
+                    </small>
+                </article>
+
+
+                <article class="kpi">
+                    <span>
+                        Cambios
+                    </span>
+
+                    <strong>
+                        {{ resultado.cambios }}
+                    </strong>
+
+                    <small>
+                        {{ "{:,}".format(resultado.min_cambio).replace(",", ".") }}
+                        min
+                    </small>
+                </article>
+
+
+                <article class="kpi">
+                    <span>
+                        Registros
+                    </span>
+
+                    <strong>
+                        {{ resultado.total_registros }}
+                    </strong>
+
+                    <small>
+                        procesados
+                    </small>
+                </article>
+
+            </div>
+
+
+            <div class="descargas">
+
+                <a
+                    href="{{ url_for('tiempos_perdidos.descargar', nombre=resultado.archivo_tiempos) }}"
+                    class="boton-descarga"
+                >
+                    <span>
+                        📥
+                    </span>
+
+                    <div>
+                        <strong>
+                            Descargar Tiempos
+                        </strong>
+
+                        <small>
+                            Formato diligenciado
+                        </small>
+                    </div>
+                </a>
+
+
+                <a
+                    href="{{ url_for('tiempos_perdidos.descargar', nombre=resultado.archivo_pareto) }}"
+                    class="boton-descarga"
+                >
+                    <span>
+                        📊
+                    </span>
+
+                    <div>
+                        <strong>
+                            Descargar Pareto
+                        </strong>
+
+                        <small>
+                            Pareto 80/20 diligenciado
+                        </small>
+                    </div>
+                </a>
+
+            </div>
+
+
+            {% if resultado.no_reconocidas %}
+
+                <div class="aviso">
+
+                    <strong>
+                        Máquinas ignoradas por no estar mapeadas
+                    </strong>
+
+                    <p>
+                        {{ resultado.no_reconocidas | join(", ") }}
+                    </p>
+
+                    <small>
+                        Si alguna pertenece al área, agréguela en
+                        ALIAS_MAQUINAS dentro de tiempos_perdidos.py.
+                    </small>
+
+                </div>
+
+            {% endif %}
+
+
+            {% if resultado.clases_ignoradas %}
+
+                <div class="aviso secundario">
+
+                    <strong>
+                        Clases de orden ignoradas
+                    </strong>
+
+                    <p>
+                        {{ resultado.clases_ignoradas | join(", ") }}
+                    </p>
+
+                </div>
+
+            {% endif %}
+
+        </section>
+
+    {% endif %}
+
+</main>
+
+
+<script>
+"use strict";
+
+const inputArchivo =
+    document.getElementById(
+        "archivo_entrega"
+    );
+
+const zonaCarga =
+    document.getElementById(
+        "zonaCarga"
+    );
+
+const archivoSeleccionado =
+    document.getElementById(
+        "archivoSeleccionado"
+    );
+
+const formulario =
+    document.getElementById(
+        "formCarga"
+    );
+
+const botonProcesar =
+    document.getElementById(
+        "botonProcesar"
+    );
+
+
+function mostrarArchivo(
+    archivo
+) {
+
+    if (!archivo) {
+        archivoSeleccionado.textContent =
+            "Ningún archivo seleccionado";
+
+        zonaCarga.classList.remove(
+            "con-archivo"
+        );
+
+        return;
+    }
+
+    archivoSeleccionado.textContent =
+        "✓ " + archivo.name;
+
+    zonaCarga.classList.add(
+        "con-archivo"
+    );
+
+}
+
+
+inputArchivo.addEventListener(
+    "change",
+    function () {
+
+        mostrarArchivo(
+            this.files[0]
+        );
+
+    }
+);
+
+
+[
+    "dragenter",
+    "dragover"
+].forEach(
+    function (evento) {
+
+        zonaCarga.addEventListener(
+            evento,
+            function (e) {
+
+                e.preventDefault();
+
+                zonaCarga.classList.add(
+                    "arrastrando"
+                );
+
+            }
+        );
+
+    }
+);
+
+
+[
+    "dragleave",
+    "drop"
+].forEach(
+    function (evento) {
+
+        zonaCarga.addEventListener(
+            evento,
+            function (e) {
+
+                e.preventDefault();
+
+                zonaCarga.classList.remove(
+                    "arrastrando"
+                );
+
+            }
+        );
+
+    }
+);
+
+
+zonaCarga.addEventListener(
+    "drop",
+    function (evento) {
+
+        const archivos =
+            evento.dataTransfer.files;
+
+        if (
+            archivos.length > 0
+        ) {
+
+            inputArchivo.files =
+                archivos;
+
+            mostrarArchivo(
+                archivos[0]
+            );
+
+        }
+
+    }
+);
+
+
+formulario.addEventListener(
+    "submit",
+    function () {
+
+        botonProcesar.disabled =
+            true;
+
+        botonProcesar.textContent =
+            "Procesando Excel...";
+
+    }
+);
+</script>
+
+</body>
+</html>
