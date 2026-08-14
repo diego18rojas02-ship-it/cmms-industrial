@@ -1,5 +1,6 @@
 import json
 import os
+from repuestos import repuestos_bp
 from calendar import monthrange
 from datetime import date, datetime
 from typing import Any
@@ -21,7 +22,7 @@ app = Flask(
 app.secret_key = os.environ.get("SECRET_KEY", "CMMS2026")
 app.register_blueprint(programacion_bp)
 app.register_blueprint(tiempos_perdidos_bp)
-
+app.register_blueprint(repuestos_bp)
 
 def cargar_datos() -> dict[str, Any]:
     if not os.path.exists(ARCHIVO_DATOS):

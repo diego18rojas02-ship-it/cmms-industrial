@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Nueva solicitud | CMMS Industrial
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/repuestos.css') }}"
+    >
+
+</head>
+
+<body>
+
+{% include 'menu.html' %}
+
+<main class="pagina-repuestos">
+
+    <header class="encabezado-repuestos">
+
+        <div>
+
+            <span class="eyebrow">
+                REPUESTOS
+            </span>
+
+            <h1>
+                Nueva solicitud
+            </h1>
+
+            <p>
+                Busque un repuesto por código SAP o descripción
+                y agréguelo a la solicitud.
+            </p>
+
+        </div>
+
+        <a
+            href="{{ url_for('repuestos.inicio') }}"
+            class="boton-secundario"
+        >
+            ← Volver
+        </a>
+
+    </header>
+
+
+    <section class="panel-busqueda">
+
+        <div class="campo-busqueda">
+
+            <span>
+                🔎
+            </span>
+
+            <input
+                type="text"
+                id="buscarMaterial"
+                placeholder="Buscar código SAP o descripción..."
+                autocomplete="off"
+            >
+
+        </div>
+
+
+        <div
+            id="resultadosBusqueda"
+            class="resultados-busqueda"
+        ></div>
+
+    </section>
+
+
+    <section class="pedido-actual">
+
+        <div class="titulo-seccion">
+
+            <div>
+
+                <span class="eyebrow">
+                    PEDIDO
+                </span>
+
+                <h2>
+                    Solicitud actual
+                </h2>
+
+            </div>
+
+            <span
+                id="contadorMateriales"
+                class="contador"
+            >
+                0 materiales
+            </span>
+
+        </div>
+
+
+        <div class="tabla-contenedor">
+
+            <table class="tabla-pedido">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Código
+                        </th>
+
+                        <th>
+                            Producto o servicio
+                        </th>
+
+                        <th>
+                            UM
+                        </th>
+
+                        <th>
+                            Existencia
+                        </th>
+
+                        <th>
+                            Cantidad pedir
+                        </th>
+
+                        <th>
+                            Valor unitario
+                        </th>
+
+                        <th>
+                            Acción
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody id="tablaPedido">
+
+                    <tr id="pedidoVacio">
+
+                        <td
+                            colspan="7"
+                            class="tabla-vacia"
+                        >
+                            No hay materiales agregados.
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <div class="acciones-pedido">
+
+            <button
+                type="button"
+                class="boton-secundario"
+                id="limpiarPedido"
+            >
+                Limpiar
+            </button>
+
+            <button
+                type="button"
+                class="boton-principal"
+                id="generarPedido"
+                disabled
+            >
+                Generar solicitud
+            </button>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+
+<div
+    class="modal-repuesto oculto"
+    id="modalRepuesto"
+>
+
+    <div
+        class="fondo-modal-repuesto"
+        id="cerrarFondo"
+    ></div>
+
+
+    <section class="contenido-modal-repuesto">
+
+        <button
+            type="button"
+            class="cerrar-modal-repuesto"
+            id="cerrarModal"
+            title="Cerrar"
+        >
+            ×
+        </button>
+
+
+        <span class="eyebrow">
+            AGREGAR AL PEDIDO
+        </span>
+
+
+        <h2 id="modalTitulo">
+            Material
+        </h2>
+
+
+        <form id="formAgregarMaterial">
+
+
+            <input
+                type="hidden"
+                id="materialId"
+            >
+
+
+            <input
+                type="hidden"
+                id="origenDato"
+                value="SAP"
+            >
+
+
+            <section class="informacion-material">
+
+                <div class="info-material-principal">
+
+                    <span class="info-etiqueta">
+                        PRODUCTO O SERVICIO
+                    </span>
+
+                    <strong id="descripcionVisual">
+                        -
+                    </strong>
+
+                </div>
+
+
+                <div class="info-material-datos">
+
+                    <div>
+
+                        <span>
+                            Código SAP
+                        </span>
+
+                        <strong id="codigoVisual">
+                            -
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            Existencia
+                        </span>
+
+                        <strong id="existenciaVisual">
+                            0
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            Unidad
+                        </span>
+
+                        <strong id="unidadVisual">
+                            -
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <input
+                type="hidden"
+                id="codigoSap"
+            >
+
+
+            <input
+                type="hidden"
+                id="descripcionMaterial"
+            >
+
+
+            <input
+                type="hidden"
+                id="unidadMedida"
+            >
+
+
+            <input
+                type="hidden"
+                id="existencia"
+            >
+
+
+            <div class="rejilla-formulario">
+
+
+                <div class="campo">
+
+                    <label for="origen">
+                        Origen
+                    </label>
+
+                    <select
+                        id="origen"
+                        required
+                    >
+
+                        <option value="">
+                            Seleccione
+                        </option>
+
+                        <option value="NAL">
+                            Nacional
+                        </option>
+
+                        <option value="IMP">
+                            Importado
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="campo">
+
+                    <label for="consumoPromedio">
+                        Consumo promedio / mes
+                    </label>
+
+                    <input
+                        type="number"
+                        id="consumoPromedio"
+                        min="0"
+                        step="any"
+                        placeholder="0"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="campo">
+
+                    <label for="tiempoEntrega">
+                        Tiempo de entrega / meses
+                    </label>
+
+                    <input
+                        type="number"
+                        id="tiempoEntrega"
+                        min="0"
+                        step="any"
+                        placeholder="0"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="campo">
+
+                    <label for="cantidadPedir">
+                        Cantidad a pedir
+                    </label>
+
+                    <input
+                        type="number"
+                        id="cantidadPedir"
+                        min="0.01"
+                        step="any"
+                        placeholder="0"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="campo campo-ancho">
+
+                    <label for="valorUnitario">
+                        Valor unitario sugerido
+                    </label>
+
+                    <div class="entrada-moneda">
+
+                        <span>
+                            $
+                        </span>
+
+                        <input
+                            type="number"
+                            id="valorUnitario"
+                            min="0"
+                            step="any"
+                            placeholder="0"
+                            required
+                        >
+
+                    </div>
+
+                    <small id="ayudaValor">
+                        Calculado según la información disponible en SAP.
+                        Puede modificarlo antes de agregar el repuesto.
+                    </small>
+
+                </div>
+
+
+                <div class="campo campo-ancho">
+
+                    <label for="observaciones">
+                        Observaciones
+                    </label>
+
+                    <textarea
+                        id="observaciones"
+                        rows="3"
+                        placeholder="Motivo de la solicitud, especificaciones o información adicional..."
+                    ></textarea>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="alertaPendiente"
+                class="alerta-pedido oculto"
+            ></div>
+
+
+            <div class="acciones-modal">
+
+                <button
+                    type="button"
+                    class="boton-secundario"
+                    id="cancelarModal"
+                >
+                    Cancelar
+                </button>
+
+                <button
+                    type="submit"
+                    class="boton-principal"
+                >
+                    Agregar al pedido
+                </button>
+
+            </div>
+
+        </form>
+
+    </section>
+
+</div>
+
+
+<script
+    src="{{ url_for('static', filename='js/repuestos.js') }}"
+></script>
+
+</body>
+
+</html>

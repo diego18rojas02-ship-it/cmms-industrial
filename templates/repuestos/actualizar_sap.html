@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Actualizar SAP | CMMS Industrial
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/repuestos.css') }}"
+    >
+</head>
+
+<body>
+
+{% include 'menu.html' %}
+
+<main class="pagina-repuestos">
+
+    <header class="encabezado-repuestos">
+
+        <div>
+
+            <span class="eyebrow">
+                REPUESTOS
+            </span>
+
+            <h1>
+                Actualizar base SAP
+            </h1>
+
+            <p>
+                Importe la base mensual de materiales,
+                existencias y valores.
+            </p>
+
+        </div>
+
+        <a
+            href="{{ url_for('repuestos.inicio') }}"
+            class="boton-secundario"
+        >
+            ← Volver
+        </a>
+
+    </header>
+
+
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+
+        {% for categoria, mensaje in mensajes %}
+
+            <div class="mensaje {{ categoria }}">
+                {{ mensaje }}
+            </div>
+
+        {% endfor %}
+
+    {% endwith %}
+
+
+    <section class="panel-sap">
+
+        <div class="sap-cabecera">
+
+            <div class="sap-icono">
+                🔄
+            </div>
+
+            <div>
+
+                <span class="eyebrow">
+                    MAESTRO SAP
+                </span>
+
+                <h2>
+                    Importar actualización
+                </h2>
+
+                <p>
+                    Cargue el Excel exportado de SAP.
+                    La información reemplazará el inventario
+                    actual y conservará un histórico.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <form
+            method="POST"
+            enctype="multipart/form-data"
+            class="formulario-sap"
+        >
+
+            <label
+                for="archivo_sap"
+                class="zona-carga"
+            >
+
+                <span class="zona-icono">
+                    📄
+                </span>
+
+                <strong>
+                    Seleccionar archivo SAP
+                </strong>
+
+                <small>
+                    Formato permitido: XLSX
+                </small>
+
+                <input
+                    type="file"
+                    id="archivo_sap"
+                    name="archivo_sap"
+                    accept=".xlsx,.xlsm"
+                    required
+                >
+
+            </label>
+
+
+            <button
+                type="submit"
+                class="boton-principal"
+            >
+                Actualizar base
+            </button>
+
+        </form>
+
+    </section>
+
+
+    <section class="ultima-actualizacion">
+
+        <span class="eyebrow">
+            ÚLTIMA ACTUALIZACIÓN
+        </span>
+
+        {% if ultima_carga %}
+
+            <div class="ultima-grid">
+
+                <div>
+
+                    <small>
+                        Fecha
+                    </small>
+
+                    <strong>
+                        {{ ultima_carga["fecha_carga"] }}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <small>
+                        Archivo
+                    </small>
+
+                    <strong>
+                        {{ ultima_carga["nombre_archivo"] }}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <small>
+                        Materiales
+                    </small>
+
+                    <strong>
+                        {{ ultima_carga["cantidad_registros"] }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+        {% else %}
+
+            <div class="sin-actualizacion">
+
+                Todavía no se ha cargado una base SAP.
+
+            </div>
+
+        {% endif %}
+
+    </section>
+
+</main>
+
+</body>
+
+</html>

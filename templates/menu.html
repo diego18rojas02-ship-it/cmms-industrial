@@ -30,11 +30,15 @@
     >📊</a>
 
     <a
-        href="#"
-        class="menu-item"
-        title="Solicitud de repuestos - Próximamente"
-    >📦</a>
-
+    href="{{ url_for('repuestos.inicio') }}"
+    class="menu-item
+        {% if request.endpoint
+        and request.endpoint.startswith('repuestos.')
+        %}activo{% endif %}"
+    title="Repuestos"
+>
+    📦
+</a>
     <a
         href="#"
         class="menu-item"
