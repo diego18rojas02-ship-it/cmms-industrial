@@ -1,0 +1,265 @@
+from pathlib import Path
+import sqlite3
+
+from flask import Blueprint, render_template
+
+
+repuestos_bp = Blueprint(
+    "repuestos",
+    __name__,
+    url_prefix="/repuestos",
+)
+
+
+def ruta_base_datos() -> Path:
+    return (
+        Path(__file__).resolve().parent
+        / "datos"
+        / "repuestos.db"
+    )
+
+
+def conectar_bd():
+    ruta = ruta_base_datos()
+
+    ruta.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    conexion = sqlite3.connect(
+        ruta
+    )
+
+    conexion.row_factory = (
+        sqlite3.Row
+    )
+
+    return conexion
+
+
+def inicializar_bd():
+    conexion = conectar_bd()
+
+    try:
+        cursor = conexion.cursor()
+
+        cursor.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS materiales_sap (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                codigo_sap TEXT UNIQUE,
+                descripcion TEXT NOT NULL,
+                unidad_medida TEXT,
+                existencia REAL DEFAULT 0,
+                valor_inventario REAL DEFAULT 0,
+                valor_unitario REAL DEFAULT 0,
+                origen_dato TEXT DEFAULT 'SAP',
+                fecha_actualizacion TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS solicitudes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                codigo_solicitud TEXT UNIQUE NOT NULL,
+                semana INTEGER NOT NULL,
+                anio INTEGER NOT NULL,
+                fecha_creacion TEXT NOT NULL,
+                area TEXT DEFAULT 'MP TAPA PLASTICA',
+                estado TEXT DEFAULT 'BORRADOR',
+                archivo_generado TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS solicitud_detalle (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                solicitud_id INTEGER NOT NULL,
+                codigo_sap TEXT,
+                descripcion TEXT NOT NULL,
+                origen TEXT,
+                unidad_medida TEXT,
+                existencia_al_solicitar REAL DEFAULT 0,
+                consumo_promedio REAL DEFAULT 0,
+                tiempo_entrega REAL DEFAULT 0,
+                cantidad_pedir REAL DEFAULT 0,
+                valor_unitario REAL DEFAULT 0,
+                observaciones TEXT,
+                origen_dato TEXT DEFAULT 'SAP',
+                estado TEXT DEFAULT 'PENDIENTE',
+                cantidad_recibida REAL DEFAULT 0,
+                cantidad_retirada REAL DEFAULT 0,
+                FOREIGN KEY (
+                    solicitud_id
+                )
+                REFERENCES solicitudes(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS secciones (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre TEXT UNIQUE NOT NULL,
+                descripcion TEXT,
+                activo INTEGER DEFAULT 1
+            );
+
+            CREATE TABLE IF NOT EXISTS subsecciones (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                seccion_id INTEGER NOT NULL,
+                nombre TEXT NOT NULL,
+                descripcion TEXT,
+                activo INTEGER DEFAULT 1,
+                UNIQUE (
+                    seccion_id,
+                    nombre
+                ),
+                FOREIGN KEY (
+                    seccion_id
+                )
+                REFERENCES secciones(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS inventario_tecnico (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                codigo_sap TEXT,
+                descripcion TEXT NOT NULL,
+                unidad_medida TEXT,
+                seccion_id INTEGER NOT NULL,
+                subseccion_id INTEGER,
+                tipo_control TEXT DEFAULT 'manual',
+                stock_minimo REAL DEFAULT 0,
+                stock_objetivo REAL DEFAULT 0,
+                origen_dato TEXT DEFAULT 'SAP',
+                observaciones TEXT,
+                activo INTEGER DEFAULT 1,
+                FOREIGN KEY (
+                    seccion_id
+                )
+                REFERENCES secciones(id),
+                FOREIGN KEY (
+                    subseccion_id
+                )
+                REFERENCES subsecciones(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS inventario_maquinas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                inventario_id INTEGER NOT NULL,
+                maquina_id INTEGER NOT NULL,
+                cantidad_necesaria REAL DEFAULT 0,
+                FOREIGN KEY (
+                    inventario_id
+                )
+                REFERENCES inventario_tecnico(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS recepciones (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                detalle_solicitud_id INTEGER NOT NULL,
+                cantidad REAL NOT NULL,
+                fecha_recepcion TEXT NOT NULL,
+                confirmado INTEGER DEFAULT 0,
+                FOREIGN KEY (
+                    detalle_solicitud_id
+                )
+                REFERENCES solicitud_detalle(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS retiros (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                detalle_solicitud_id INTEGER NOT NULL,
+                cantidad REAL NOT NULL,
+                fecha_retiro TEXT NOT NULL,
+                observaciones TEXT,
+                FOREIGN KEY (
+                    detalle_solicitud_id
+                )
+                REFERENCES solicitud_detalle(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS snapshots_sap (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                fecha_carga TEXT NOT NULL,
+                codigo_sap TEXT NOT NULL,
+                descripcion TEXT,
+                unidad_medida TEXT,
+                existencia REAL DEFAULT 0,
+                valor_inventario REAL DEFAULT 0
+            );
+            """
+        )
+
+        conexion.commit()
+
+    finally:
+        conexion.close()
+
+
+def obtener_resumen():
+    conexion = conectar_bd()
+
+    try:
+        cursor = conexion.cursor()
+
+        solicitudes_activas = (
+            cursor.execute(
+                """
+                SELECT COUNT(*)
+                FROM solicitudes
+                WHERE estado NOT IN (
+                    'CERRADA',
+                    'ANULADA'
+                )
+                """
+            ).fetchone()[0]
+        )
+
+        pendientes_recibir = (
+            cursor.execute(
+                """
+                SELECT COUNT(*)
+                FROM solicitud_detalle
+                WHERE estado IN (
+                    'PENDIENTE',
+                    'RECIBIDO_PARCIAL'
+                )
+                """
+            ).fetchone()[0]
+        )
+
+        recibidos_retirar = (
+            cursor.execute(
+                """
+                SELECT COUNT(*)
+                FROM solicitud_detalle
+                WHERE estado = 'PENDIENTE_RETIRO'
+                """
+            ).fetchone()[0]
+        )
+
+        bajo_stock = 0
+
+        return {
+            "solicitudes_activas":
+                solicitudes_activas,
+
+            "pendientes_recibir":
+                pendientes_recibir,
+
+            "recibidos_retirar":
+                recibidos_retirar,
+
+            "bajo_stock":
+                bajo_stock,
+        }
+
+    finally:
+        conexion.close()
+
+
+@repuestos_bp.route("/")
+def inicio():
+    inicializar_bd()
+
+    resumen = obtener_resumen()
+
+    return render_template(
+        "repuestos/inicio.html",
+        resumen=resumen,
+    )

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Repuestos | CMMS Industrial
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/repuestos.css') }}"
+    >
+</head>
+
+<body>
+
+{% include 'menu.html' %}
+
+<main class="pagina-repuestos">
+
+    <header class="encabezado-repuestos">
+
+        <div>
+            <span class="eyebrow">
+                CMMS INDUSTRIAL
+            </span>
+
+            <h1>
+                Gestión de repuestos
+            </h1>
+
+            <p>
+                Solicitudes, seguimiento e inventario técnico.
+            </p>
+        </div>
+
+    </header>
+
+
+    <section class="resumen-repuestos">
+
+        <article class="tarjeta-resumen">
+
+            <span class="icono-resumen">
+                📝
+            </span>
+
+            <div>
+
+                <small>
+                    Solicitudes activas
+                </small>
+
+                <strong>
+                    {{ resumen.solicitudes_activas if resumen is defined else 0 }}
+                </strong>
+
+            </div>
+
+        </article>
+
+
+        <article class="tarjeta-resumen">
+
+            <span class="icono-resumen">
+                🚚
+            </span>
+
+            <div>
+
+                <small>
+                    Pendientes por recibir
+                </small>
+
+                <strong>
+                    {{ resumen.pendientes_recibir if resumen is defined else 0 }}
+                </strong>
+
+            </div>
+
+        </article>
+
+
+        <article class="tarjeta-resumen">
+
+            <span class="icono-resumen">
+                📥
+            </span>
+
+            <div>
+
+                <small>
+                    Recibidos por retirar
+                </small>
+
+                <strong>
+                    {{ resumen.recibidos_retirar if resumen is defined else 0 }}
+                </strong>
+
+            </div>
+
+        </article>
+
+
+        <article class="tarjeta-resumen">
+
+            <span class="icono-resumen">
+                ⚠️
+            </span>
+
+            <div>
+
+                <small>
+                    Bajo stock
+                </small>
+
+                <strong>
+                    {{ resumen.bajo_stock if resumen is defined else 0 }}
+                </strong>
+
+            </div>
+
+        </article>
+
+    </section>
+
+
+    <section class="modulos-repuestos">
+
+        <a
+            href="{{ url_for('repuestos.nueva_solicitud') }}"
+            class="modulo-card"
+        >
+
+            <div class="modulo-icono">
+                🛒
+            </div>
+
+            <div class="modulo-contenido">
+
+                <span class="modulo-etiqueta">
+                    PEDIDOS
+                </span>
+
+                <h2>
+                    Nueva solicitud
+                </h2>
+
+                <p>
+                    Buscar materiales por código SAP o descripción
+                    y construir una nueva solicitud de repuestos.
+                </p>
+
+                <span class="estado-desarrollo">
+                    Abrir
+                </span>
+
+            </div>
+
+        </a>
+
+
+        <article class="modulo-card">
+
+            <div class="modulo-icono">
+                📋
+            </div>
+
+            <div class="modulo-contenido">
+
+                <span class="modulo-etiqueta">
+                    CONTROL
+                </span>
+
+                <h2>
+                    Seguimiento
+                </h2>
+
+                <p>
+                    Consultar solicitudes pendientes,
+                    posibles recepciones y pedidos
+                    parcialmente recibidos.
+                </p>
+
+                <span class="estado-desarrollo">
+                    Próxima etapa
+                </span>
+
+            </div>
+
+        </article>
+
+
+        <article class="modulo-card">
+
+            <div class="modulo-icono">
+                📦
+            </div>
+
+            <div class="modulo-contenido">
+
+                <span class="modulo-etiqueta">
+                    ALMACÉN
+                </span>
+
+                <h2>
+                    Recibidos por retirar
+                </h2>
+
+                <p>
+                    Controlar los materiales recibidos
+                    que todavía deben ser retirados
+                    del almacén.
+                </p>
+
+                <span class="estado-desarrollo">
+                    Próxima etapa
+                </span>
+
+            </div>
+
+        </article>
+
+
+        <article class="modulo-card">
+
+            <div class="modulo-icono">
+                🗂️
+            </div>
+
+            <div class="modulo-contenido">
+
+                <span class="modulo-etiqueta">
+                    STOCK
+                </span>
+
+                <h2>
+                    Inventario técnico
+                </h2>
+
+                <p>
+                    Crear secciones y subsecciones,
+                    definir stock mínimo y controlar
+                    repuestos críticos.
+                </p>
+
+                <span class="estado-desarrollo">
+                    Próxima etapa
+                </span>
+
+            </div>
+
+        </article>
+
+<a
+    href="{{ url_for('repuestos.actualizar_sap') }}"
+    class="modulo-card"
+>
+
+    <div class="modulo-icono">
+        🔄
+    </div>
+
+    <div class="modulo-contenido">
+
+        <span class="modulo-etiqueta">
+            SAP
+        </span>
+
+        <h2>
+            Actualizar base SAP
+        </h2>
+
+        <p>
+            Importar la base de materiales exportada desde SAP.
+        </p>
+
+        <span class="estado-desarrollo">
+            Abrir
+        </span>
+
+    </div>
+
+</a>
+        
+                    Importar periódicamente la base
+                    de materiales, existencias y valores
+                    exportada desde SAP.
+                </p>
+
+                <span class="estado-desarrollo">
+                    Próxima etapa
+                </span>
+
+            </div>
+
+        </article>
+
+    </section>
+
+</main>
+
+</body>
+</html>

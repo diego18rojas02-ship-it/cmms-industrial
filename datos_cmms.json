@@ -3,7 +3,7 @@
     {
       "id": 1,
       "nombre": "CCM1",
-      "horometro": 110955,
+      "horometro": 3,
       "controles": [
         {
           "codigo": "rutina",
@@ -78,12 +78,12 @@
           ]
         }
       ],
-      "horometro_actual": 110955
+      "horometro_actual": 3
     },
     {
       "id": 2,
       "nombre": "CCM2",
-      "horometro": 88672,
+      "horometro": 3,
       "controles": [
         {
           "codigo": "rutina",
@@ -158,12 +158,12 @@
           ]
         }
       ],
-      "horometro_actual": 88672
+      "horometro_actual": 3
     },
     {
       "id": 3,
       "nombre": "CCM3",
-      "horometro": 111942,
+      "horometro": 3,
       "controles": [
         {
           "codigo": "rutina",
@@ -238,12 +238,12 @@
           ]
         }
       ],
-      "horometro_actual": 111942
+      "horometro_actual": 3
     },
     {
       "id": 4,
       "nombre": "CCM4",
-      "horometro": 96925,
+      "horometro": 3,
       "controles": [
         {
           "codigo": "rutina",
@@ -318,12 +318,12 @@
           ]
         }
       ],
-      "horometro_actual": 96925
+      "horometro_actual": 3
     },
     {
       "id": 5,
       "nombre": "CCM5",
-      "horometro": 74490,
+      "horometro": 3,
       "controles": [
         {
           "codigo": "rutina",
@@ -398,12 +398,12 @@
           ]
         }
       ],
-      "horometro_actual": 74490
+      "horometro_actual": 3
     },
     {
       "id": 6,
       "nombre": "CCM6",
-      "horometro": 69145,
+      "horometro": 3,
       "controles": [
         {
           "codigo": "rutina",
@@ -478,12 +478,12 @@
           ]
         }
       ],
-      "horometro_actual": 69145
+      "horometro_actual": 3
     },
     {
       "id": 7,
       "nombre": "CCM7",
-      "horometro": 47806,
+      "horometro": 3,
       "controles": [
         {
           "codigo": "rutina",
@@ -558,12 +558,12 @@
           ]
         }
       ],
-      "horometro_actual": 47806
+      "horometro_actual": 3
     },
     {
       "id": 8,
       "nombre": "CCM8",
-      "horometro": 21924,
+      "horometro": 3,
       "controles": [
         {
           "codigo": "rutina",
@@ -638,12 +638,12 @@
           ]
         }
       ],
-      "horometro_actual": 21924
+      "horometro_actual": 3
     },
     {
       "id": 9,
       "nombre": "Pulverizadora",
-      "horometro": 6300,
+      "horometro": 3,
       "controles": [
         {
           "codigo": "rutina",
@@ -658,12 +658,13 @@
             "9 días"
           ]
         }
-      ]
+      ],
+      "horometro_actual": 3
     },
     {
       "id": 10,
       "nombre": "Autoclave",
-      "horometro": 5200,
+      "horometro": 3,
       "controles": [
         {
           "codigo": "rutina",
@@ -678,259 +679,256 @@
             "20 días"
           ]
         }
-      ]
+      ],
+      "horometro_actual": 3
     }
   ],
   "mantenimientos": {
     "2": {
       "punzones": {
-        "horometro_intervencion": 10500,
+        "horometro_intervencion": 0,
         "fecha_intervencion": "2026-08-01"
       },
       "rutina": {
-        "horometro_intervencion": 10500,
+        "horometro_intervencion": 0,
         "fecha_intervencion": "2026-08-01",
         "frecuencia": "quincenal"
       }
     },
     "3": {
       "rutina": {
-        "horometro_intervencion": 111052,
+        "horometro_intervencion": 0,
         "fecha_intervencion": "2026-06-22",
         "frecuencia": "quincenal"
       },
       "aceite": {
-        "horometro_intervencion": 9903,
+        "horometro_intervencion": 0,
         "fecha_intervencion": "2026-08-01"
       },
       "distribuidores": {
         "distribuidor_agua": {
-          "horometro_intervencion": 111052,
+          "horometro_intervencion": 0,
           "fecha_intervencion": "2026-06-22"
         },
         "distribuidor_aceite": {
-          "horometro_intervencion": 111052,
+          "horometro_intervencion": 0,
           "fecha_intervencion": "2026-06-22"
         }
       }
     },
     "4": {
       "rutina": {
-        "horometro_intervencion": 96908,
+        "horometro_intervencion": 0,
         "fecha_intervencion": "2026-08-05",
         "frecuencia": "mensual"
       }
     },
     "1": {
       "rutina": {
-        "horometro_intervencion": 110955,
-        "fecha_intervencion": "2026-07-14",
+        "horometro_intervencion": 2,
+        "fecha_intervencion": "2026-08-12",
+        "frecuencia": "quincenal"
+      }
+    },
+    "10": {
+      "rutina": {
+        "horometro_intervencion": 2,
+        "fecha_intervencion": "2026-08-12",
         "frecuencia": "quincenal"
       }
     }
   },
   "registros_horometros": [
     {
-      "maquina_id": 1,
-      "maquina": "CCM6",
-      "fecha_registro": "2026-08-01",
-      "horometro_anterior": 12312,
-      "horometro_actual": 12312,
-      "ejecuto_mantenimiento": false
-    },
-    {
-      "maquina_id": 2,
-      "maquina": "Dicer 200 - Tula",
-      "fecha_registro": "2026-08-01",
-      "horometro_anterior": 10500,
-      "horometro_actual": 10500,
-      "ejecuto_mantenimiento": true,
-      "horometro_intervencion": 10500,
-      "fecha_intervencion": "2026-08-01",
-      "frecuencia_ejecutada": "trimestral",
-      "distribuidor": "",
-      "cambio_aceite": false
-    },
-    {
-      "maquina_id": 3,
-      "maquina": "Dicer 250 - Tula",
-      "fecha_registro": "2026-08-01",
-      "horometro_anterior": 9800,
-      "horometro_actual": 9900,
-      "ejecuto_mantenimiento": true,
-      "horometro_intervencion": 9810,
-      "fecha_intervencion": "2026-08-01",
-      "frecuencia_ejecutada": "quincenal",
-      "distribuidor": "",
-      "cambio_aceite": true
-    },
-    {
-      "maquina_id": 3,
-      "maquina": "Dicer 250 - Tula",
-      "fecha_registro": "2026-08-01",
-      "horometro_anterior": 9900,
-      "horometro_actual": 9910,
-      "ejecuto_mantenimiento": true,
-      "horometro_intervencion": 9903,
-      "fecha_intervencion": "2026-08-01",
-      "frecuencia_ejecutada": "quincenal",
-      "distribuidor": "",
-      "cambio_aceite": true
-    },
-    {
-      "maquina_id": 7,
-      "maquina": "CCM7",
-      "fecha_registro": "2026-08-07",
-      "horometro_anterior": 8450,
-      "horometro_actual": 47806,
-      "ejecuto_mantenimiento": false
-    },
-    {
-      "maquina_id": 4,
-      "maquina": "CCM4",
-      "fecha_registro": "2026-08-07",
-      "horometro_anterior": 10200,
-      "horometro_actual": 96925,
-      "ejecuto_mantenimiento": true,
-      "horometro_intervencion": 96908,
-      "fecha_intervencion": "2026-08-05",
-      "frecuencia_ejecutada": "mensual",
-      "distribuidor": "",
-      "cambio_aceite": false
-    },
-    {
-      "maquina_id": 4,
-      "maquina": "CCM4",
-      "fecha_registro": "2026-08-07",
-      "horometro_anterior": 96925,
-      "horometro_actual": 96925,
-      "ejecuto_mantenimiento": true,
-      "horometro_intervencion": 96908,
-      "fecha_intervencion": "2026-08-05",
-      "frecuencia_ejecutada": "mensual",
-      "distribuidor": "",
-      "cambio_aceite": false
-    },
-    {
-      "maquina_id": 3,
-      "maquina": "CCM3",
-      "fecha_registro": "2026-08-07",
-      "horometro_anterior": 9910,
-      "horometro_actual": 111942,
-      "ejecuto_mantenimiento": true,
-      "horometro_intervencion": 111052,
-      "fecha_intervencion": "2026-06-22",
-      "frecuencia_ejecutada": "semestral",
-      "cambio_aceite": false,
-      "novedad_distribuidor": false,
-      "distribuidor_novedad": ""
-    },
-    {
       "modo_registro": "horometro",
       "maquina_id": 1,
       "maquina": "CCM1",
-      "fecha_registro": "2026-08-07",
-      "horometro_anterior": 12312,
-      "horometro_actual": 12312,
-      "ejecuto_mantenimiento": false
-    },
-    {
-      "modo_registro": "mantenimiento",
-      "maquina_id": 1,
-      "maquina": "CCM1",
-      "fecha_registro": "2026-08-07",
-      "horometro_anterior": 12312,
-      "horometro_actual": 12312,
-      "ejecuto_mantenimiento": true,
-      "horometro_intervencion": 1234,
-      "fecha_intervencion": "2026-08-07",
-      "frecuencia_ejecutada": "quincenal",
-      "cambio_aceite": false,
-      "novedad_distribuidor": false,
-      "distribuidor_novedad": ""
-    },
-    {
-      "modo_registro": "horometro",
-      "maquina_id": 1,
-      "maquina": "CCM1",
-      "fecha_registro": "2026-08-07",
-      "horometro_anterior": 12312,
-      "horometro_actual": 110955,
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 0,
+      "horometro_actual": 1,
       "ejecuto_mantenimiento": false
     },
     {
       "modo_registro": "horometro",
       "maquina_id": 2,
       "maquina": "CCM2",
-      "fecha_registro": "2026-08-07",
-      "horometro_anterior": 10500,
-      "horometro_actual": 88672,
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 0,
+      "horometro_actual": 1,
       "ejecuto_mantenimiento": false
     },
     {
       "modo_registro": "horometro",
       "maquina_id": 3,
       "maquina": "CCM3",
-      "fecha_registro": "2026-08-07",
-      "horometro_anterior": 111942,
-      "horometro_actual": 111942,
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 0,
+      "horometro_actual": 1,
       "ejecuto_mantenimiento": false
     },
     {
       "modo_registro": "horometro",
       "maquina_id": 4,
       "maquina": "CCM4",
-      "fecha_registro": "2026-08-07",
-      "horometro_anterior": 96925,
-      "horometro_actual": 96925,
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 0,
+      "horometro_actual": 1,
       "ejecuto_mantenimiento": false
     },
     {
       "modo_registro": "horometro",
       "maquina_id": 5,
       "maquina": "CCM5",
-      "fecha_registro": "2026-08-07",
-      "horometro_anterior": 10450,
-      "horometro_actual": 74490,
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 0,
+      "horometro_actual": 1,
       "ejecuto_mantenimiento": false
     },
     {
       "modo_registro": "horometro",
       "maquina_id": 6,
       "maquina": "CCM6",
-      "fecha_registro": "2026-08-07",
-      "horometro_anterior": 10800,
-      "horometro_actual": 69145,
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 0,
+      "horometro_actual": 1,
       "ejecuto_mantenimiento": false
     },
     {
       "modo_registro": "horometro",
       "maquina_id": 7,
       "maquina": "CCM7",
-      "fecha_registro": "2026-08-07",
-      "horometro_anterior": 47806,
-      "horometro_actual": 47806,
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 0,
+      "horometro_actual": 1,
       "ejecuto_mantenimiento": false
     },
     {
       "modo_registro": "horometro",
       "maquina_id": 8,
       "maquina": "CCM8",
-      "fecha_registro": "2026-08-07",
-      "horometro_anterior": 8720,
-      "horometro_actual": 21924,
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 0,
+      "horometro_actual": 1,
+      "ejecuto_mantenimiento": false
+    },
+    {
+      "modo_registro": "horometro",
+      "maquina_id": 9,
+      "maquina": "Pulverizadora",
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 0,
+      "horometro_actual": 1,
+      "ejecuto_mantenimiento": false
+    },
+    {
+      "modo_registro": "horometro",
+      "maquina_id": 10,
+      "maquina": "Autoclave",
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 0,
+      "horometro_actual": 1,
+      "ejecuto_mantenimiento": false
+    },
+    {
+      "modo_registro": "horometro",
+      "maquina_id": 1,
+      "maquina": "CCM1",
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 1,
+      "horometro_actual": 3,
+      "ejecuto_mantenimiento": false
+    },
+    {
+      "modo_registro": "horometro",
+      "maquina_id": 2,
+      "maquina": "CCM2",
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 1,
+      "horometro_actual": 3,
+      "ejecuto_mantenimiento": false
+    },
+    {
+      "modo_registro": "horometro",
+      "maquina_id": 3,
+      "maquina": "CCM3",
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 1,
+      "horometro_actual": 3,
+      "ejecuto_mantenimiento": false
+    },
+    {
+      "modo_registro": "horometro",
+      "maquina_id": 4,
+      "maquina": "CCM4",
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 1,
+      "horometro_actual": 3,
+      "ejecuto_mantenimiento": false
+    },
+    {
+      "modo_registro": "horometro",
+      "maquina_id": 5,
+      "maquina": "CCM5",
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 1,
+      "horometro_actual": 3,
+      "ejecuto_mantenimiento": false
+    },
+    {
+      "modo_registro": "horometro",
+      "maquina_id": 6,
+      "maquina": "CCM6",
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 1,
+      "horometro_actual": 3,
+      "ejecuto_mantenimiento": false
+    },
+    {
+      "modo_registro": "horometro",
+      "maquina_id": 7,
+      "maquina": "CCM7",
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 1,
+      "horometro_actual": 3,
+      "ejecuto_mantenimiento": false
+    },
+    {
+      "modo_registro": "horometro",
+      "maquina_id": 8,
+      "maquina": "CCM8",
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 1,
+      "horometro_actual": 3,
+      "ejecuto_mantenimiento": false
+    },
+    {
+      "modo_registro": "horometro",
+      "maquina_id": 9,
+      "maquina": "Pulverizadora",
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 1,
+      "horometro_actual": 3,
+      "ejecuto_mantenimiento": false
+    },
+    {
+      "modo_registro": "horometro",
+      "maquina_id": 10,
+      "maquina": "Autoclave",
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 1,
+      "horometro_actual": 3,
       "ejecuto_mantenimiento": false
     },
     {
       "modo_registro": "mantenimiento",
       "maquina_id": 1,
       "maquina": "CCM1",
-      "fecha_registro": "2026-08-07",
-      "horometro_anterior": 110955,
-      "horometro_actual": 110955,
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 3,
+      "horometro_actual": 3,
       "ejecuto_mantenimiento": true,
-      "horometro_intervencion": 110456,
-      "fecha_intervencion": "2026-07-14",
+      "horometro_intervencion": 1,
+      "fecha_intervencion": "2026-08-12",
       "frecuencia_ejecutada": "quincenal",
       "cambio_aceite": false,
       "novedad_distribuidor": false,
@@ -940,34 +938,61 @@
       "modo_registro": "mantenimiento",
       "maquina_id": 1,
       "maquina": "CCM1",
-      "fecha_registro": "2026-08-07",
-      "horometro_anterior": 110955,
-      "horometro_actual": 110955,
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 3,
+      "horometro_actual": 3,
       "ejecuto_mantenimiento": true,
-      "horometro_intervencion": 110955,
-      "fecha_intervencion": "2026-07-14",
+      "horometro_intervencion": 1,
+      "fecha_intervencion": "2026-08-12",
       "frecuencia_ejecutada": "quincenal",
       "cambio_aceite": false,
       "novedad_distribuidor": false,
       "distribuidor_novedad": ""
     },
     {
-      "modo_registro": "horometro",
-      "maquina_id": 1,
-      "maquina": "CCM1",
-      "fecha_registro": "2026-08-07",
-      "horometro_anterior": 110955,
-      "horometro_actual": 110955,
-      "ejecuto_mantenimiento": false
+      "modo_registro": "mantenimiento",
+      "maquina_id": 10,
+      "maquina": "Autoclave",
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 3,
+      "horometro_actual": 3,
+      "ejecuto_mantenimiento": true,
+      "horometro_intervencion": 2,
+      "fecha_intervencion": "2026-08-12",
+      "frecuencia_ejecutada": "quincenal",
+      "cambio_aceite": false,
+      "novedad_distribuidor": false,
+      "distribuidor_novedad": ""
     },
     {
-      "modo_registro": "horometro",
+      "modo_registro": "mantenimiento",
       "maquina_id": 1,
       "maquina": "CCM1",
-      "fecha_registro": "2026-08-09",
-      "horometro_anterior": 110955,
-      "horometro_actual": 110955,
-      "ejecuto_mantenimiento": false
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 3,
+      "horometro_actual": 3,
+      "ejecuto_mantenimiento": true,
+      "horometro_intervencion": 1,
+      "fecha_intervencion": "2026-08-12",
+      "frecuencia_ejecutada": "quincenal",
+      "cambio_aceite": false,
+      "novedad_distribuidor": false,
+      "distribuidor_novedad": ""
+    },
+    {
+      "modo_registro": "mantenimiento",
+      "maquina_id": 1,
+      "maquina": "CCM1",
+      "fecha_registro": "2026-08-12",
+      "horometro_anterior": 3,
+      "horometro_actual": 3,
+      "ejecuto_mantenimiento": true,
+      "horometro_intervencion": 2,
+      "fecha_intervencion": "2026-08-12",
+      "frecuencia_ejecutada": "quincenal",
+      "cambio_aceite": false,
+      "novedad_distribuidor": false,
+      "distribuidor_novedad": ""
     }
   ],
   "programaciones": [
