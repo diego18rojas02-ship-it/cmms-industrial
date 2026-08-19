@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+    <title>Seguimiento de repuestos | CMMS Industrial</title>
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/repuestos.css') }}"
+    >
+</head>
+
+<body>
+
+{% include 'menu.html' %}
+
+<main class="pagina-repuestos">
+
+    <header class="encabezado-repuestos">
+        <div>
+            <span class="eyebrow">
+                REPUESTOS
+            </span>
+
+            <h1>
+                Seguimiento de pedidos
+            </h1>
+
+            <p>
+                Controle materiales pendientes, recepciones parciales
+                y posibles llegadas detectadas por cambios en SAP.
+            </p>
+        </div>
+
+        <a
+            href="{{ url_for('repuestos.inicio') }}"
+            class="boton-secundario"
+        >
+            ← Volver
+        </a>
+    </header>
+
+
+    <section class="resumen-repuestos">
+
+        <article class="tarjeta-resumen">
+            <span class="icono-resumen">
+                📋
+            </span>
+
+            <div>
+                <small>
+                    Activos
+                </small>
+
+                <strong>
+                    {{ resumen.total }}
+                </strong>
+            </div>
+        </article>
+
+
+        <article class="tarjeta-resumen">
+            <span class="icono-resumen">
+                ⏳
+            </span>
+
+            <div>
+                <small>
+                    Pendientes
+                </small>
+
+                <strong>
+                    {{ resumen.pendientes }}
+                </strong>
+            </div>
+        </article>
+
+
+        <article class="tarjeta-resumen">
+            <span class="icono-resumen">
+                🔎
+            </span>
+
+            <div>
+                <small>
+                    Posible recepción
+                </small>
+
+                <strong>
+                    {{ resumen.posibles }}
+                </strong>
+            </div>
+        </article>
+
+
+        <article class="tarjeta-resumen">
+            <span class="icono-resumen">
+                📦
+            </span>
+
+            <div>
+                <small>
+                    Parciales
+                </small>
+
+                <strong>
+                    {{ resumen.parciales }}
+                </strong>
+            </div>
+        </article>
+
+    </section>
+
+
+    <section class="panel-seguimiento">
+
+        <div class="titulo-seccion">
+
+            <div>
+                <span class="eyebrow">
+                    PEDIDOS ACTIVOS
+                </span>
+
+                <h2>
+                    Materiales en seguimiento
+                </h2>
+            </div>
+
+            <div class="filtros-seguimiento">
+                <input
+                    type="text"
+                    id="filtroSeguimiento"
+                    placeholder="Buscar código o descripción..."
+                >
+
+                <select id="filtroEstado">
+                    <option value="">
+                        Todos
+                    </option>
+
+                    <option value="PENDIENTE">
+                        Pendiente
+                    </option>
+
+                    <option value="POSIBLE_RECEPCION">
+                        Posible recepción
+                    </option>
+
+                    <option value="RECIBIDO_PARCIAL">
+                        Recibido parcial
+                    </option>
+                </select>
+            </div>
+        </div>
+
+
+        <div class="tabla-contenedor">
+
+            <table class="tabla-pedido tabla-seguimiento">
+
+                <thead>
+                    <tr>
+                        <th>Solicitud</th>
+                        <th>Código</th>
+                        <th>Material</th>
+                        <th>UM</th>
+                        <th>Pedido</th>
+                        <th>Recibido</th>
+                        <th>Pendiente</th>
+                        <th>Stock al pedir</th>
+                        <th>Stock SAP</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+
+                <tbody id="tablaSeguimiento">
+
+                    {% if registros %}
+
+                        {% for item in registros %}
+
+                            <tr
+                                data-codigo="{{ item.codigo_sap or '' }}"
+                                data-descripcion="{{ item.descripcion }}"
+                                data-estado="{{ item.estado_visual }}"
+                            >
+
+                                <td>
+                                    <strong>
+                                        {{ item.codigo_solicitud }}
+                                    </strong>
+
+                                    <small class="dato-secundario">
+                                        S{{ item.semana }}
+                                    </small>
+                                </td>
+
+                                <td>
+                                    {{ item.codigo_sap or 'CREAR' }}
+                                </td>
+
+                                <td>
+                                    {{ item.descripcion }}
+                                </td>
+
+                                <td>
+                                    {{ item.unidad_medida }}
+                                </td>
+
+                                <td>
+                                    {{ "{:,.2f}".format(item.cantidad_pedir).rstrip("0").rstrip(".") }}
+                                </td>
+
+                                <td>
+                                    {{ "{:,.2f}".format(item.cantidad_recibida).rstrip("0").rstrip(".") }}
+                                </td>
+
+                                <td>
+                                    <strong>
+                                        {{ "{:,.2f}".format(item.cantidad_pendiente).rstrip("0").rstrip(".") }}
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    {{ "{:,.2f}".format(item.existencia_al_solicitar).rstrip("0").rstrip(".") }}
+                                </td>
+
+                                <td>
+                                    {{ "{:,.2f}".format(item.existencia_actual).rstrip("0").rstrip(".") }}
+                                </td>
+
+                                <td>
+
+                                    {% if item.estado_visual == "POSIBLE_RECEPCION" %}
+
+                                        <span class="estado-seguimiento estado-posible">
+                                            Posible recepción
+                                        </span>
+
+                                        <small class="dato-secundario">
+                                            +{{ "{:,.2f}".format(item.posible_recepcion).rstrip("0").rstrip(".") }}
+                                            {{ item.unidad_medida }}
+                                        </small>
+
+                                    {% elif item.estado_visual == "RECIBIDO_PARCIAL" %}
+
+                                        <span class="estado-seguimiento estado-parcial">
+                                            Parcial
+                                        </span>
+
+                                    {% else %}
+
+                                        <span class="estado-seguimiento estado-pendiente">
+                                            Pendiente
+                                        </span>
+
+                                    {% endif %}
+
+                                </td>
+
+                                <td>
+
+                                    {% if item.cantidad_pendiente > 0 %}
+
+                                        <button
+                                            type="button"
+                                            class="boton-confirmar-recepcion"
+                                            data-detalle-id="{{ item.detalle_id }}"
+                                            data-pendiente="{{ item.cantidad_pendiente }}"
+                                            data-sugerida="{{ item.posible_recepcion }}"
+                                            data-unidad="{{ item.unidad_medida }}"
+                                            data-descripcion="{{ item.descripcion }}"
+                                        >
+                                            Confirmar recibido
+                                        </button>
+
+                                    {% endif %}
+
+                                </td>
+
+                            </tr>
+
+                        {% endfor %}
+
+                    {% else %}
+
+                        <tr>
+                            <td
+                                colspan="11"
+                                class="tabla-vacia"
+                            >
+                                No hay pedidos activos en seguimiento.
+                            </td>
+                        </tr>
+
+                    {% endif %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<div
+    class="modal-repuesto oculto"
+    id="modalRecepcion"
+>
+
+    <div
+        class="fondo-modal-repuesto"
+        id="fondoRecepcion"
+    ></div>
+
+    <section class="contenido-modal-repuesto modal-recepcion">
+
+        <button
+            type="button"
+            class="cerrar-modal-repuesto"
+            id="cerrarRecepcion"
+        >
+            ×
+        </button>
+
+        <span class="eyebrow">
+            CONFIRMAR RECEPCIÓN
+        </span>
+
+        <h2 id="tituloRecepcion">
+            Material recibido
+        </h2>
+
+        <p class="texto-recepcion">
+            Confirme únicamente la cantidad que realmente ingresó al almacén.
+        </p>
+
+        <div class="campo">
+            <label for="cantidadRecibida">
+                Cantidad recibida
+            </label>
+
+            <input
+                type="number"
+                id="cantidadRecibida"
+                min="0.01"
+                step="any"
+            >
+
+            <small id="detallePendienteRecepcion"></small>
+        </div>
+
+        <div
+            id="errorRecepcion"
+            class="mensaje error oculto"
+        ></div>
+
+        <div class="acciones-modal">
+
+            <button
+                type="button"
+                class="boton-secundario"
+                id="cancelarRecepcion"
+            >
+                Cancelar
+            </button>
+
+            <button
+                type="button"
+                class="boton-principal"
+                id="confirmarRecepcion"
+            >
+                Confirmar recibido
+            </button>
+
+        </div>
+
+    </section>
+
+</div>
+
+
+<script>
+"use strict";
+
+const filtroSeguimiento =
+    document.getElementById(
+        "filtroSeguimiento"
+    );
+
+const filtroEstado =
+    document.getElementById(
+        "filtroEstado"
+    );
+
+const filasSeguimiento =
+    Array.from(
+        document.querySelectorAll(
+            "#tablaSeguimiento tr[data-codigo]"
+        )
+    );
+
+const modalRecepcion =
+    document.getElementById(
+        "modalRecepcion"
+    );
+
+const fondoRecepcion =
+    document.getElementById(
+        "fondoRecepcion"
+    );
+
+const cerrarRecepcion =
+    document.getElementById(
+        "cerrarRecepcion"
+    );
+
+const cancelarRecepcion =
+    document.getElementById(
+        "cancelarRecepcion"
+    );
+
+const confirmarRecepcion =
+    document.getElementById(
+        "confirmarRecepcion"
+    );
+
+const cantidadRecibida =
+    document.getElementById(
+        "cantidadRecibida"
+    );
+
+const tituloRecepcion =
+    document.getElementById(
+        "tituloRecepcion"
+    );
+
+const detallePendienteRecepcion =
+    document.getElementById(
+        "detallePendienteRecepcion"
+    );
+
+const errorRecepcion =
+    document.getElementById(
+        "errorRecepcion"
+    );
+
+let detalleSeleccionado = null;
+let pendienteSeleccionado = 0;
+
+
+function aplicarFiltros() {
+    const texto =
+        filtroSeguimiento.value
+            .trim()
+            .toLowerCase();
+
+    const estado =
+        filtroEstado.value;
+
+    filasSeguimiento.forEach(
+        fila => {
+            const codigo =
+                String(
+                    fila.dataset.codigo
+                    || ""
+                ).toLowerCase();
+
+            const descripcion =
+                String(
+                    fila.dataset.descripcion
+                    || ""
+                ).toLowerCase();
+
+            const estadoFila =
+                fila.dataset.estado
+                || "";
+
+            const coincideTexto =
+                !texto
+                || codigo.includes(
+                    texto
+                )
+                || descripcion.includes(
+                    texto
+                );
+
+            const coincideEstado =
+                !estado
+                || estadoFila === estado;
+
+            fila.style.display =
+                coincideTexto
+                && coincideEstado
+                    ? ""
+                    : "none";
+        }
+    );
+}
+
+
+function cerrarModalRecepcion() {
+    modalRecepcion.classList.add(
+        "oculto"
+    );
+
+    errorRecepcion.classList.add(
+        "oculto"
+    );
+
+    errorRecepcion.textContent = "";
+
+    detalleSeleccionado = null;
+    pendienteSeleccionado = 0;
+}
+
+
+document
+    .querySelectorAll(
+        ".boton-confirmar-recepcion"
+    )
+    .forEach(
+        boton => {
+            boton.addEventListener(
+                "click",
+                function () {
+                    detalleSeleccionado =
+                        Number(
+                            this.dataset.detalleId
+                        );
+
+                    pendienteSeleccionado =
+                        Number(
+                            this.dataset.pendiente
+                            || 0
+                        );
+
+                    const sugerida =
+                        Number(
+                            this.dataset.sugerida
+                            || 0
+                        );
+
+                    const unidad =
+                        this.dataset.unidad
+                        || "";
+
+                    const descripcion =
+                        this.dataset.descripcion
+                        || "Material";
+
+                    tituloRecepcion.textContent =
+                        descripcion;
+
+                    cantidadRecibida.max =
+                        pendienteSeleccionado;
+
+                    cantidadRecibida.value =
+                        sugerida > 0
+                            ? sugerida
+                            : pendienteSeleccionado;
+
+                    detallePendienteRecepcion.textContent =
+                        `Pendiente máximo: ${pendienteSeleccionado} ${unidad}`;
+
+                    modalRecepcion.classList.remove(
+                        "oculto"
+                    );
+
+                    cantidadRecibida.focus();
+                }
+            );
+        }
+    );
+
+
+async function confirmar() {
+    if (!detalleSeleccionado) {
+        return;
+    }
+
+    const cantidad =
+        Number(
+            cantidadRecibida.value
+        );
+
+    if (
+        !Number.isFinite(
+            cantidad
+        )
+        || cantidad <= 0
+    ) {
+        errorRecepcion.textContent =
+            "Ingrese una cantidad recibida válida.";
+
+        errorRecepcion.classList.remove(
+            "oculto"
+        );
+
+        return;
+    }
+
+    if (
+        cantidad
+        > pendienteSeleccionado
+    ) {
+        errorRecepcion.textContent =
+            `La cantidad no puede superar ${pendienteSeleccionado}.`;
+
+        errorRecepcion.classList.remove(
+            "oculto"
+        );
+
+        return;
+    }
+
+    confirmarRecepcion.disabled =
+        true;
+
+    confirmarRecepcion.textContent =
+        "Confirmando...";
+
+    try {
+        const respuesta =
+            await fetch(
+                `/repuestos/api/seguimiento/${detalleSeleccionado}/confirmar-recepcion`,
+                {
+                    method:
+                        "POST",
+
+                    headers:
+                        {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                    body:
+                        JSON.stringify(
+                            {
+                                cantidad:
+                                    cantidad
+                            }
+                        )
+                }
+            );
+
+        const datos =
+            await respuesta.json();
+
+        if (
+            !respuesta.ok
+            || !datos.ok
+        ) {
+            throw new Error(
+                datos.error
+                || "No fue posible confirmar la recepción."
+            );
+        }
+
+        window.location.reload();
+
+    } catch (error) {
+        errorRecepcion.textContent =
+            error.message;
+
+        errorRecepcion.classList.remove(
+            "oculto"
+        );
+
+    } finally {
+        confirmarRecepcion.disabled =
+            false;
+
+        confirmarRecepcion.textContent =
+            "Confirmar recibido";
+    }
+}
+
+
+filtroSeguimiento.addEventListener(
+    "input",
+    aplicarFiltros
+);
+
+filtroEstado.addEventListener(
+    "change",
+    aplicarFiltros
+);
+
+confirmarRecepcion.addEventListener(
+    "click",
+    confirmar
+);
+
+cerrarRecepcion.addEventListener(
+    "click",
+    cerrarModalRecepcion
+);
+
+cancelarRecepcion.addEventListener(
+    "click",
+    cerrarModalRecepcion
+);
+
+fondoRecepcion.addEventListener(
+    "click",
+    cerrarModalRecepcion
+);
+</script>
+
+</body>
+</html>

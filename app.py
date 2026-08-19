@@ -9,6 +9,13 @@ from flask import Flask, flash, redirect, render_template, request, url_for
 from programacion import programacion_bp
 from tiempos_perdidos import tiempos_perdidos_bp
 
+try:
+    import psycopg
+    from psycopg.types.json import Jsonb
+except ModuleNotFoundError:
+    psycopg = None
+    Jsonb = None
+
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ARCHIVO_DATOS = os.path.join(BASE_DIR, "datos_cmms.json")
@@ -24,17 +31,23 @@ app.register_blueprint(programacion_bp)
 app.register_blueprint(tiempos_perdidos_bp)
 app.register_blueprint(repuestos_bp)
 
-def cargar_datos() -> dict[str, Any]:
-    if not os.path.exists(ARCHIVO_DATOS):
-        return {
-            "maquinas": [],
-            "registros_horometros": [],
-            "mantenimientos": {},
-            "programaciones": [],
-        }
+DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
 
-    with open(ARCHIVO_DATOS, "r", encoding="utf-8") as archivo:
-        datos = json.load(archivo)
+
+def datos_vacios() -> dict[str, Any]:
+    return {
+        "maquinas": [],
+        "registros_horometros": [],
+        "mantenimientos": {},
+        "programaciones": [],
+    }
+
+
+def normalizar_datos(
+    datos: dict[str, Any] | None,
+) -> dict[str, Any]:
+    if not isinstance(datos, dict):
+        datos = datos_vacios()
 
     datos.setdefault("maquinas", [])
     datos.setdefault("registros_horometros", [])
@@ -44,14 +57,205 @@ def cargar_datos() -> dict[str, Any]:
     return datos
 
 
-def guardar_datos(datos: dict[str, Any]) -> None:
+def cargar_datos_json_local() -> dict[str, Any]:
+    if not os.path.exists(ARCHIVO_DATOS):
+        return datos_vacios()
+
+    try:
+        with open(
+            ARCHIVO_DATOS,
+            "r",
+            encoding="utf-8",
+        ) as archivo:
+            datos = json.load(archivo)
+    except (
+        OSError,
+        json.JSONDecodeError,
+    ):
+        return datos_vacios()
+
+    return normalizar_datos(datos)
+
+
+def guardar_datos_json_local(
+    datos: dict[str, Any],
+) -> None:
     temporal = f"{ARCHIVO_DATOS}.tmp"
 
-    with open(temporal, "w", encoding="utf-8") as archivo:
-        json.dump(datos, archivo, ensure_ascii=False, indent=2)
+    with open(
+        temporal,
+        "w",
+        encoding="utf-8",
+    ) as archivo:
+        json.dump(
+            normalizar_datos(datos),
+            archivo,
+            ensure_ascii=False,
+            indent=2,
+        )
 
-    os.replace(temporal, ARCHIVO_DATOS)
+    os.replace(
+        temporal,
+        ARCHIVO_DATOS,
+    )
 
+
+def conectar_postgres():
+    if not DATABASE_URL:
+        raise RuntimeError(
+            "DATABASE_URL no está configurada."
+        )
+
+    if psycopg is None:
+        raise RuntimeError(
+            "Falta instalar psycopg. "
+            "Agregue psycopg[binary] a requirements.txt."
+        )
+
+    return psycopg.connect(
+        DATABASE_URL,
+        connect_timeout=15,
+    )
+
+
+def inicializar_postgres() -> None:
+    if not DATABASE_URL:
+        return
+
+    with conectar_postgres() as conexion:
+        with conexion.cursor() as cursor:
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS cmms_estado (
+                    id SMALLINT PRIMARY KEY,
+                    datos JSONB NOT NULL,
+                    actualizado_en TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+
+            cursor.execute(
+                """
+                SELECT datos
+                FROM cmms_estado
+                WHERE id = 1
+                """
+            )
+
+            fila = cursor.fetchone()
+
+            if fila is None:
+                datos_iniciales = cargar_datos_json_local()
+
+                cursor.execute(
+                    """
+                    INSERT INTO cmms_estado (
+                        id,
+                        datos,
+                        actualizado_en
+                    )
+                    VALUES (
+                        1,
+                        %s,
+                        NOW()
+                    )
+                    """,
+                    (
+                        Jsonb(
+                            normalizar_datos(
+                                datos_iniciales
+                            )
+                        ),
+                    ),
+                )
+
+        conexion.commit()
+
+
+def cargar_datos_postgres() -> dict[str, Any]:
+    inicializar_postgres()
+
+    with conectar_postgres() as conexion:
+        with conexion.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT datos
+                FROM cmms_estado
+                WHERE id = 1
+                """
+            )
+
+            fila = cursor.fetchone()
+
+            if fila is None:
+                return datos_vacios()
+
+            datos = fila[0]
+
+            if isinstance(datos, str):
+                datos = json.loads(datos)
+
+            return normalizar_datos(datos)
+
+
+def guardar_datos_postgres(
+    datos: dict[str, Any],
+) -> None:
+    inicializar_postgres()
+
+    datos = normalizar_datos(datos)
+
+    with conectar_postgres() as conexion:
+        with conexion.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO cmms_estado (
+                    id,
+                    datos,
+                    actualizado_en
+                )
+                VALUES (
+                    1,
+                    %s,
+                    NOW()
+                )
+                ON CONFLICT (id)
+                DO UPDATE SET
+                    datos = EXCLUDED.datos,
+                    actualizado_en = NOW()
+                """,
+                (
+                    Jsonb(datos),
+                ),
+            )
+
+        conexion.commit()
+
+
+def cargar_datos() -> dict[str, Any]:
+    if DATABASE_URL:
+        try:
+            return cargar_datos_postgres()
+        except Exception as error:
+            print(
+                f"Error cargando PostgreSQL: {error}"
+            )
+
+    return cargar_datos_json_local()
+
+
+def guardar_datos(
+    datos: dict[str, Any],
+) -> None:
+    if DATABASE_URL:
+        guardar_datos_postgres(
+            datos
+        )
+        return
+
+    guardar_datos_json_local(
+        datos
+    )
 
 def buscar_maquina(
     datos: dict[str, Any],
