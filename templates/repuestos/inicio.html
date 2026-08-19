@@ -2,31 +2,262 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
 
     <title>
-        Repuestos | CMMS Industrial
+        Gestión de repuestos | CMMS Industrial
     </title>
 
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='css/repuestos.css') }}"
-    >
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+        }
+
+        body {
+            background: #020d19;
+            color: #ffffff;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .pagina-repuestos {
+            width: calc(100% - 110px);
+            max-width: 1500px;
+            margin-left: 68px;
+            padding: 30px 24px 50px;
+        }
+
+        .encabezado {
+            margin-bottom: 25px;
+        }
+
+        .marca {
+            display: block;
+            margin-bottom: 8px;
+            color: #32aaff;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+        }
+
+        .encabezado h1 {
+            margin: 0 0 8px;
+            font-size: 30px;
+            line-height: 1.1;
+        }
+
+        .encabezado p {
+            margin: 0;
+            color: #83b9df;
+            font-size: 13px;
+        }
+
+        .resumen {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+
+        .tarjeta-resumen {
+            min-height: 78px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 15px;
+            border: 1px solid #254766;
+            border-radius: 14px;
+            background: #0b1a2c;
+        }
+
+        .resumen-icono {
+            width: 43px;
+            height: 43px;
+            flex: 0 0 43px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 11px;
+            background: #14365c;
+            font-size: 20px;
+        }
+
+        .resumen-info {
+            min-width: 0;
+        }
+
+        .resumen-info span {
+            display: block;
+            margin-bottom: 5px;
+            color: #74b8f1;
+            font-size: 10px;
+        }
+
+        .resumen-info strong {
+            display: block;
+            font-size: 21px;
+            line-height: 1;
+        }
+
+        .modulos {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+            align-items: stretch;
+        }
+
+        .modulo-card {
+            position: relative;
+            min-width: 0;
+            min-height: 210px;
+            display: flex;
+            gap: 16px;
+            padding: 20px;
+            overflow: hidden;
+            border: 1px solid #294b6b;
+            border-radius: 15px;
+            background: #0b1a2c;
+            transition:
+                transform 0.18s ease,
+                border-color 0.18s ease,
+                background 0.18s ease;
+        }
+
+        a.modulo-card:hover {
+            transform: translateY(-2px);
+            border-color: #1f9be8;
+            background: #0d2035;
+        }
+
+        .modulo-icono {
+            width: 48px;
+            height: 48px;
+            flex: 0 0 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: #14365c;
+            font-size: 22px;
+        }
+
+        .modulo-contenido {
+            min-width: 0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .modulo-etiqueta {
+            display: block;
+            margin-bottom: 7px;
+            color: #26a9ff;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .modulo-contenido h2 {
+            margin: 0 0 9px;
+            font-size: 17px;
+            line-height: 1.2;
+        }
+
+        .modulo-contenido p {
+            margin: 0 0 18px;
+            color: #86b9e2;
+            font-size: 11px;
+            line-height: 1.55;
+        }
+
+        .boton-modulo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 30px;
+            margin-top: auto;
+            padding: 6px 12px;
+            border: 1px solid #31658e;
+            border-radius: 999px;
+            color: #ffffff;
+            background: #102b44;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .modulo-inactivo {
+            cursor: default;
+            opacity: 0.7;
+        }
+
+        .modulo-inactivo .boton-modulo {
+            border-color: #36536d;
+            color: #8ba3b8;
+            background: #0c1c2b;
+        }
+
+        .modulo-sap {
+            grid-column: span 2;
+        }
+
+        @media (max-width: 1050px) {
+            .resumen {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .modulos {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .modulo-sap {
+                grid-column: auto;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .pagina-repuestos {
+                width: calc(100% - 20px);
+                margin-left: 0;
+                padding: 22px 10px 40px;
+            }
+
+            .resumen {
+                grid-template-columns: 1fr;
+            }
+
+            .modulos {
+                grid-template-columns: 1fr;
+            }
+
+            .modulo-card {
+                min-height: 190px;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-{% include 'menu.html' %}
+    <main class="pagina-repuestos">
 
-<main class="pagina-repuestos">
+        <header class="encabezado">
 
-    <header class="encabezado-repuestos">
-
-        <div>
-            <span class="eyebrow">
+            <span class="marca">
                 CMMS INDUSTRIAL
             </span>
 
@@ -37,273 +268,270 @@
             <p>
                 Solicitudes, seguimiento e inventario técnico.
             </p>
-        </div>
 
-    </header>
+        </header>
 
 
-    <section class="resumen-repuestos">
+        <section class="resumen">
 
-        <article class="tarjeta-resumen">
+            <article class="tarjeta-resumen">
 
-            <span class="icono-resumen">
-                📝
-            </span>
+                <div class="resumen-icono">
+                    📝
+                </div>
 
-            <div>
+                <div class="resumen-info">
 
-                <small>
-                    Solicitudes activas
-                </small>
+                    <span>
+                        Solicitudes activas
+                    </span>
 
-                <strong>
-                    {{ resumen.solicitudes_activas if resumen is defined else 0 }}
-                </strong>
+                    <strong>
+                        {{ resumen.solicitudes_activas | default(0) }}
+                    </strong>
 
-            </div>
+                </div>
 
-        </article>
+            </article>
 
 
-        <article class="tarjeta-resumen">
+            <article class="tarjeta-resumen">
 
-            <span class="icono-resumen">
-                🚚
-            </span>
+                <div class="resumen-icono">
+                    🚚
+                </div>
 
-            <div>
+                <div class="resumen-info">
 
-                <small>
-                    Pendientes por recibir
-                </small>
+                    <span>
+                        Pendientes por recibir
+                    </span>
 
-                <strong>
-                    {{ resumen.pendientes_recibir if resumen is defined else 0 }}
-                </strong>
+                    <strong>
+                        {{ resumen.pendientes_recibir | default(0) }}
+                    </strong>
 
-            </div>
+                </div>
 
-        </article>
+            </article>
 
 
-        <article class="tarjeta-resumen">
+            <article class="tarjeta-resumen">
 
-            <span class="icono-resumen">
-                📥
-            </span>
+                <div class="resumen-icono">
+                    📥
+                </div>
 
-            <div>
+                <div class="resumen-info">
 
-                <small>
-                    Recibidos por retirar
-                </small>
+                    <span>
+                        Recibidos por retirar
+                    </span>
 
-                <strong>
-                    {{ resumen.recibidos_retirar if resumen is defined else 0 }}
-                </strong>
+                    <strong>
+                        {{ resumen.recibidos_retirar | default(0) }}
+                    </strong>
 
-            </div>
+                </div>
 
-        </article>
+            </article>
 
 
-        <article class="tarjeta-resumen">
+            <article class="tarjeta-resumen">
 
-            <span class="icono-resumen">
-                ⚠️
-            </span>
+                <div class="resumen-icono">
+                    ⚠️
+                </div>
 
-            <div>
+                <div class="resumen-info">
 
-                <small>
-                    Bajo stock
-                </small>
+                    <span>
+                        Bajo stock
+                    </span>
 
-                <strong>
-                    {{ resumen.bajo_stock if resumen is defined else 0 }}
-                </strong>
+                    <strong>
+                        {{ resumen.bajo_stock | default(0) }}
+                    </strong>
 
-            </div>
+                </div>
 
-        </article>
+            </article>
 
-    </section>
+        </section>
 
 
-    <section class="modulos-repuestos">
+        <section class="modulos">
 
-        <a
-            href="{{ url_for('repuestos.nueva_solicitud') }}"
-            class="modulo-card"
-        >
+            <a
+                href="{{ url_for('repuestos.nueva_solicitud') }}"
+                class="modulo-card"
+            >
 
-            <div class="modulo-icono">
-                🛒
-            </div>
+                <div class="modulo-icono">
+                    🛒
+                </div>
 
-            <div class="modulo-contenido">
+                <div class="modulo-contenido">
 
-                <span class="modulo-etiqueta">
-                    PEDIDOS
-                </span>
+                    <span class="modulo-etiqueta">
+                        PEDIDOS
+                    </span>
 
-                <h2>
-                    Nueva solicitud
-                </h2>
+                    <h2>
+                        Nueva solicitud
+                    </h2>
 
-                <p>
-                    Buscar materiales por código SAP o descripción
-                    y construir una nueva solicitud de repuestos.
-                </p>
+                    <p>
+                        Buscar materiales por código SAP o
+                        descripción y construir una nueva
+                        solicitud de repuestos.
+                    </p>
 
-                <span class="estado-desarrollo">
-                    Abrir
-                </span>
+                    <span class="boton-modulo">
+                        Abrir
+                    </span>
 
-            </div>
+                </div>
 
-        </a>
+            </a>
 
 
-        <article class="modulo-card">
+            <a
+                href="{{ url_for('repuestos.seguimiento') }}"
+                class="modulo-card"
+            >
 
-            <div class="modulo-icono">
-                📋
-            </div>
+                <div class="modulo-icono">
+                    📋
+                </div>
 
-            <div class="modulo-contenido">
+                <div class="modulo-contenido">
 
-                <span class="modulo-etiqueta">
-                    CONTROL
-                </span>
+                    <span class="modulo-etiqueta">
+                        CONTROL
+                    </span>
 
-                <h2>
-                    Seguimiento
-                </h2>
+                    <h2>
+                        Seguimiento
+                    </h2>
 
-                <p>
-                    Consultar solicitudes pendientes,
-                    posibles recepciones y pedidos
-                    parcialmente recibidos.
-                </p>
+                    <p>
+                        Consultar solicitudes pendientes,
+                        posibles recepciones y pedidos
+                        parcialmente recibidos.
+                    </p>
 
-                <span class="estado-desarrollo">
-                    Próxima etapa
-                </span>
+                    <span class="boton-modulo">
+                        Abrir
+                    </span>
 
-            </div>
+                </div>
 
-        </article>
+            </a>
 
 
-        <article class="modulo-card">
+            <article
+                class="modulo-card modulo-inactivo"
+            >
 
-            <div class="modulo-icono">
-                📦
-            </div>
+                <div class="modulo-icono">
+                    📦
+                </div>
 
-            <div class="modulo-contenido">
+                <div class="modulo-contenido">
 
-                <span class="modulo-etiqueta">
-                    ALMACÉN
-                </span>
+                    <span class="modulo-etiqueta">
+                        ALMACÉN
+                    </span>
 
-                <h2>
-                    Recibidos por retirar
-                </h2>
+                    <h2>
+                        Recibidos por retirar
+                    </h2>
 
-                <p>
-                    Controlar los materiales recibidos
-                    que todavía deben ser retirados
-                    del almacén.
-                </p>
+                    <p>
+                        Controlar los materiales recibidos
+                        que todavía deben ser retirados
+                        del almacén.
+                    </p>
 
-                <span class="estado-desarrollo">
-                    Próxima etapa
-                </span>
+                    <span class="boton-modulo">
+                        Próxima etapa
+                    </span>
 
-            </div>
+                </div>
 
-        </article>
+            </article>
 
 
-        <article class="modulo-card">
+            <article
+                class="modulo-card modulo-inactivo"
+            >
 
-            <div class="modulo-icono">
-                🗂️
-            </div>
+                <div class="modulo-icono">
+                    📁
+                </div>
 
-            <div class="modulo-contenido">
+                <div class="modulo-contenido">
 
-                <span class="modulo-etiqueta">
-                    STOCK
-                </span>
+                    <span class="modulo-etiqueta">
+                        STOCK
+                    </span>
 
-                <h2>
-                    Inventario técnico
-                </h2>
+                    <h2>
+                        Inventario técnico
+                    </h2>
 
-                <p>
-                    Crear secciones y subsecciones,
-                    definir stock mínimo y controlar
-                    repuestos críticos.
-                </p>
+                    <p>
+                        Crear secciones y subsecciones,
+                        definir stock mínimo y controlar
+                        repuestos críticos.
+                    </p>
 
-                <span class="estado-desarrollo">
-                    Próxima etapa
-                </span>
+                    <span class="boton-modulo">
+                        Próxima etapa
+                    </span>
 
-            </div>
+                </div>
 
-        </article>
+            </article>
 
-<a
-    href="{{ url_for('repuestos.actualizar_sap') }}"
-    class="modulo-card"
->
 
-    <div class="modulo-icono">
-        🔄
-    </div>
+            <a
+                href="{{ url_for('repuestos.actualizar_sap') }}"
+                class="modulo-card modulo-sap"
+            >
 
-    <div class="modulo-contenido">
+                <div class="modulo-icono">
+                    🔄
+                </div>
 
-        <span class="modulo-etiqueta">
-            SAP
-        </span>
+                <div class="modulo-contenido">
 
-        <h2>
-            Actualizar base SAP
-        </h2>
+                    <span class="modulo-etiqueta">
+                        SAP
+                    </span>
 
-        <p>
-            Importar la base de materiales exportada desde SAP.
-        </p>
+                    <h2>
+                        Actualizar base SAP
+                    </h2>
 
-        <span class="estado-desarrollo">
-            Abrir
-        </span>
+                    <p>
+                        Importar periódicamente la base de
+                        materiales, existencias, unidades de
+                        medida y valores exportada desde SAP.
+                    </p>
 
-    </div>
+                    <span class="boton-modulo">
+                        Abrir
+                    </span>
 
-</a>
-        
-                    Importar periódicamente la base
-                    de materiales, existencias y valores
-                    exportada desde SAP.
-                </p>
+                </div>
 
-                <span class="estado-desarrollo">
-                    Próxima etapa
-                </span>
+            </a>
 
-            </div>
+        </section>
 
-        </article>
-
-    </section>
-
-</main>
+    </main>
 
 </body>
 </html>
