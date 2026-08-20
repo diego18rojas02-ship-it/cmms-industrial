@@ -1048,3 +1048,238 @@ a.modulo-card {
         width: 100%;
     }
 }
+.acciones-encabezado-retiros {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.campo-retiro-observacion {
+    margin-top: 12px;
+}
+
+.campo-retiro-observacion textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 9px 10px;
+    border: 1px solid #2b4663;
+    border-radius: 8px;
+    outline: none;
+    color: #ffffff;
+    background: #07111e;
+    resize: vertical;
+}
+
+.campo-retiro-observacion textarea:focus {
+    border-color: #48aef7;
+}
+
+@media (max-width: 700px) {
+    .acciones-encabezado-retiros {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}
+.inventario-layout {
+    display: grid;
+    grid-template-columns: 330px minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
+}
+
+.panel-categorias,
+.panel-inventario {
+    padding: 18px;
+    border: 1px solid var(--borde);
+    border-radius: 15px;
+    background: var(--panel);
+}
+
+.lista-secciones {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.seccion-item {
+    padding: 12px;
+    border: 1px solid #29455f;
+    border-radius: 11px;
+    background: #091725;
+}
+
+.seccion-cabecera {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.seccion-cabecera strong {
+    display: block;
+    font-size: 11px;
+}
+
+.seccion-cabecera small,
+.subseccion-item small {
+    display: block;
+    margin-top: 3px;
+    color: #7891aa;
+    font-size: 8px;
+}
+
+.acciones-mini {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.accion-mini {
+    display: grid;
+    place-items: center;
+    width: 27px;
+    height: 27px;
+    padding: 0;
+    border: 1px solid #304d68;
+    border-radius: 7px;
+    color: #b7cce0;
+    background: #0b1c2c;
+    cursor: pointer;
+}
+
+.accion-mini:hover {
+    border-color: #48aef7;
+    color: #ffffff;
+}
+
+.agregar-subseccion {
+    margin-top: 9px;
+    padding: 5px 8px;
+    border: 1px dashed #335979;
+    border-radius: 7px;
+    color: #8ebfe2;
+    font-size: 8px;
+    background: transparent;
+    cursor: pointer;
+}
+
+.subsecciones-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 8px;
+}
+
+.subseccion-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 8px 9px;
+    border-radius: 8px;
+    background: #0c2032;
+}
+
+.subseccion-item span {
+    font-size: 9px;
+}
+
+.elemento-inactivo {
+    opacity: 0.45;
+}
+
+.boton-compacto {
+    min-height: 31px;
+    padding: 0 10px;
+    font-size: 9px;
+}
+
+.filtros-inventario {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.filtros-inventario input,
+.filtros-inventario select {
+    min-height: 37px;
+    padding: 7px 10px;
+    border: 1px solid #2c4865;
+    border-radius: 8px;
+    outline: none;
+    color: #ffffff;
+    background: #071321;
+}
+
+.filtros-inventario input {
+    flex: 1;
+}
+
+.tabla-inventario {
+    min-width: 1250px;
+}
+
+.estado-stock {
+    display: inline-flex;
+    padding: 5px 8px;
+    border: 1px solid;
+    border-radius: 999px;
+    font-size: 8px;
+    font-weight: 700;
+}
+
+.stock-critico {
+    border-color: #8b3745;
+    color: #ff97a6;
+    background: #2d1118;
+}
+
+.stock-bajo {
+    border-color: #826527;
+    color: #f3d278;
+    background: #2c2410;
+}
+
+.stock-ok {
+    border-color: #2b7051;
+    color: #91e4b8;
+    background: #0b2b1d;
+}
+
+.stock-inactivo {
+    border-color: #4b5968;
+    color: #8b9aaa;
+    background: #15202a;
+}
+
+.modal-inventario {
+    width: min(700px, 100%);
+}
+
+.material-inventario-seleccionado {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 11px;
+    border: 1px solid #28674f;
+    border-radius: 9px;
+    color: #b4ead0;
+    background: #0a291d;
+}
+
+.material-inventario-seleccionado span {
+    color: #83b49d;
+    font-size: 9px;
+}
+
+@media (max-width: 950px) {
+    .inventario-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 650px) {
+    .filtros-inventario {
+        flex-direction: column;
+    }
+}

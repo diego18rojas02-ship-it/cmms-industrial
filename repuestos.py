@@ -421,8 +421,7 @@ def buscar_pedidos_pendientes(codigo_sap: str):
             WHERE sd.codigo_sap = ?
             AND sd.estado IN (
                 'PENDIENTE',
-                'RECIBIDO_PARCIAL',
-                'PENDIENTE_RETIRO'
+                'RECIBIDO_PARCIAL'
             )
             AND s.estado NOT IN ('CERRADA', 'ANULADA')
             ORDER BY sd.id DESC
@@ -2360,11 +2359,10 @@ def confirmar_recepcion_detalle(
 
 @repuestos_bp.route("/")
 def inicio():
-    inicializar_bd()
-
-    return render_template(
-        "repuestos/inicio.html",
-        resumen=obtener_resumen(),
+    return redirect(
+        url_for(
+            "repuestos.nueva_solicitud"
+        )
     )
 
 
@@ -2523,6 +2521,1707 @@ def actualizar_sap():
     )
 
 
+def obtener_recibidos_por_retirar():
+    conexion = conectar_bd()
+
+    try:
+        filas = conexion.execute(
+            """
+            SELECT
+                sd.id AS detalle_id,
+                sd.solicitud_id,
+                sd.codigo_sap,
+                sd.descripcion,
+                sd.unidad_medida,
+                sd.cantidad_pedir,
+                sd.cantidad_recibida,
+                sd.cantidad_retirada,
+                sd.fecha_recibido,
+                sd.fecha_retiro,
+                sd.estado,
+                sd.observaciones,
+                s.codigo_solicitud,
+                s.semana,
+                s.anio,
+                s.fecha_creacion
+            FROM solicitud_detalle sd
+            INNER JOIN solicitudes s
+                ON s.id = sd.solicitud_id
+            WHERE sd.cantidad_recibida > sd.cantidad_retirada
+            AND s.estado <> 'ANULADA'
+            ORDER BY
+                COALESCE(sd.fecha_recibido, s.fecha_creacion) DESC,
+                sd.id DESC
+            """
+        ).fetchall()
+
+        resultado = []
+
+        for fila in filas:
+            item = dict(fila)
+
+            cantidad_recibida = float(
+                item.get(
+                    "cantidad_recibida"
+                )
+                or 0
+            )
+
+            cantidad_retirada = float(
+                item.get(
+                    "cantidad_retirada"
+                )
+                or 0
+            )
+
+            item[
+                "cantidad_pendiente_retiro"
+            ] = max(
+                0,
+                cantidad_recibida
+                - cantidad_retirada,
+            )
+
+            resultado.append(
+                item
+            )
+
+        return resultado
+
+    finally:
+        conexion.close()
+
+
+def confirmar_retiro_detalle(
+    detalle_id: int,
+    cantidad: float,
+    observaciones: str = "",
+):
+    if cantidad <= 0:
+        raise ValueError(
+            "La cantidad retirada debe ser mayor que cero."
+        )
+
+    conexion = conectar_bd()
+
+    try:
+        fila = conexion.execute(
+            """
+            SELECT
+                id,
+                solicitud_id,
+                cantidad_pedir,
+                cantidad_recibida,
+                cantidad_retirada,
+                estado
+            FROM solicitud_detalle
+            WHERE id = ?
+            """,
+            (
+                detalle_id,
+            ),
+        ).fetchone()
+
+        if fila is None:
+            raise ValueError(
+                "No se encontró el material seleccionado."
+            )
+
+        cantidad_pedir = float(
+            fila[
+                "cantidad_pedir"
+            ]
+            or 0
+        )
+
+        cantidad_recibida = float(
+            fila[
+                "cantidad_recibida"
+            ]
+            or 0
+        )
+
+        cantidad_retirada_actual = float(
+            fila[
+                "cantidad_retirada"
+            ]
+            or 0
+        )
+
+        pendiente_retiro = max(
+            0,
+            cantidad_recibida
+            - cantidad_retirada_actual,
+        )
+
+        if pendiente_retiro <= 0:
+            raise ValueError(
+                "Este material no tiene unidades pendientes por retirar."
+            )
+
+        if cantidad > pendiente_retiro:
+            raise ValueError(
+                f"La cantidad retirada no puede superar "
+                f"la cantidad pendiente ({pendiente_retiro:g})."
+            )
+
+        nueva_cantidad_retirada = (
+            cantidad_retirada_actual
+            + cantidad
+        )
+
+        pendiente_recepcion = max(
+            0,
+            cantidad_pedir
+            - cantidad_recibida,
+        )
+
+        pendiente_retiro_nuevo = max(
+            0,
+            cantidad_recibida
+            - nueva_cantidad_retirada,
+        )
+
+        if (
+            pendiente_recepcion <= 0
+            and pendiente_retiro_nuevo <= 0
+        ):
+            nuevo_estado = "COMPLETADO"
+
+        elif pendiente_recepcion > 0:
+            nuevo_estado = "RECIBIDO_PARCIAL"
+
+        else:
+            nuevo_estado = "PENDIENTE_RETIRO"
+
+        fecha_retiro = datetime.now().isoformat(
+            timespec="seconds"
+        )
+
+        conexion.execute(
+            """
+            UPDATE solicitud_detalle
+            SET
+                cantidad_retirada = ?,
+                estado = ?,
+                fecha_retiro = ?
+            WHERE id = ?
+            """,
+            (
+                nueva_cantidad_retirada,
+                nuevo_estado,
+                fecha_retiro,
+                detalle_id,
+            ),
+        )
+
+        conexion.execute(
+            """
+            INSERT INTO retiros (
+                detalle_solicitud_id,
+                cantidad,
+                fecha_retiro,
+                observaciones
+            )
+            VALUES (
+                ?,
+                ?,
+                ?,
+                ?
+            )
+            """,
+            (
+                detalle_id,
+                cantidad,
+                fecha_retiro,
+                observaciones.strip(),
+            ),
+        )
+
+        solicitud_id = int(
+            fila[
+                "solicitud_id"
+            ]
+        )
+
+        pendiente_solicitud = conexion.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM solicitud_detalle
+            WHERE solicitud_id = ?
+            AND estado <> 'COMPLETADO'
+            """,
+            (
+                solicitud_id,
+            ),
+        ).fetchone()[
+            "total"
+        ]
+
+        if int(
+            pendiente_solicitud
+            or 0
+        ) == 0:
+            conexion.execute(
+                """
+                UPDATE solicitudes
+                SET estado = 'CERRADA'
+                WHERE id = ?
+                """,
+                (
+                    solicitud_id,
+                ),
+            )
+
+        conexion.commit()
+
+        return {
+            "detalle_id":
+                detalle_id,
+
+            "cantidad_retirada":
+                cantidad,
+
+            "cantidad_retirada_total":
+                nueva_cantidad_retirada,
+
+            "cantidad_pendiente_retiro":
+                pendiente_retiro_nuevo,
+
+            "cantidad_pendiente_recepcion":
+                pendiente_recepcion,
+
+            "estado":
+                nuevo_estado,
+        }
+
+    except Exception:
+        conexion.rollback()
+        raise
+
+    finally:
+        conexion.close()
+
+
+def generar_excel_retiros():
+    load_workbook = cargar_openpyxl()
+
+    from openpyxl import Workbook
+
+    registros = obtener_recibidos_por_retirar()
+
+    if not registros:
+        raise ValueError(
+            "No hay materiales pendientes por retirar."
+        )
+
+    carpeta = (
+        BASE_DIR
+        / "salidas"
+        / "repuestos"
+        / "retiros"
+    )
+
+    carpeta.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    fecha = datetime.now()
+
+    nombre = (
+        "MATERIALES_PENDIENTES_RETIRO_"
+        + fecha.strftime(
+            "%Y%m%d_%H%M%S"
+        )
+        + ".xlsx"
+    )
+
+    ruta = carpeta / nombre
+
+    libro = Workbook()
+    hoja = libro.active
+    hoja.title = "Pendientes por retirar"
+
+    encabezados = [
+        "Solicitud",
+        "Semana",
+        "Código SAP",
+        "Descripción",
+        "Unidad",
+        "Cantidad recibida",
+        "Cantidad retirada",
+        "Pendiente por retirar",
+        "Fecha recibido",
+        "Observaciones",
+    ]
+
+    hoja.append(
+        encabezados
+    )
+
+    for item in registros:
+        hoja.append(
+            [
+                item.get(
+                    "codigo_solicitud",
+                    "",
+                ),
+                item.get(
+                    "semana",
+                    "",
+                ),
+                item.get(
+                    "codigo_sap",
+                    "",
+                )
+                or "CREAR",
+                item.get(
+                    "descripcion",
+                    "",
+                ),
+                item.get(
+                    "unidad_medida",
+                    "",
+                ),
+                item.get(
+                    "cantidad_recibida",
+                    0,
+                ),
+                item.get(
+                    "cantidad_retirada",
+                    0,
+                ),
+                item.get(
+                    "cantidad_pendiente_retiro",
+                    0,
+                ),
+                item.get(
+                    "fecha_recibido",
+                    "",
+                ),
+                item.get(
+                    "observaciones",
+                    "",
+                ),
+            ]
+        )
+
+    hoja.freeze_panes = "A2"
+    hoja.auto_filter.ref = hoja.dimensions
+
+    anchos = {
+        "A": 20,
+        "B": 10,
+        "C": 18,
+        "D": 50,
+        "E": 12,
+        "F": 18,
+        "G": 18,
+        "H": 22,
+        "I": 22,
+        "J": 45,
+    }
+
+    for columna, ancho in anchos.items():
+        hoja.column_dimensions[
+            columna
+        ].width = ancho
+
+    libro.save(
+        ruta
+    )
+
+    return ruta
+
+
+def obtener_secciones_inventario(
+    incluir_inactivas: bool = True,
+):
+    conexion = conectar_bd()
+
+    try:
+        condicion = ""
+
+        if not incluir_inactivas:
+            condicion = "WHERE s.activo = 1"
+
+        filas = conexion.execute(
+            f"""
+            SELECT
+                s.id,
+                s.nombre,
+                s.descripcion,
+                s.activo,
+                s.fecha_creacion,
+                COUNT(DISTINCT ss.id) AS total_subsecciones,
+                COUNT(DISTINCT it.id) AS total_materiales
+            FROM secciones s
+            LEFT JOIN subsecciones ss
+                ON ss.seccion_id = s.id
+            LEFT JOIN inventario_tecnico it
+                ON it.seccion_id = s.id
+                AND it.activo = 1
+            {condicion}
+            GROUP BY
+                s.id,
+                s.nombre,
+                s.descripcion,
+                s.activo,
+                s.fecha_creacion
+            ORDER BY
+                s.activo DESC,
+                UPPER(s.nombre)
+            """
+        ).fetchall()
+
+        return [
+            dict(
+                fila
+            )
+            for fila in filas
+        ]
+
+    finally:
+        conexion.close()
+
+
+def obtener_subsecciones_inventario(
+    incluir_inactivas: bool = True,
+):
+    conexion = conectar_bd()
+
+    try:
+        condicion = ""
+
+        if not incluir_inactivas:
+            condicion = "WHERE ss.activo = 1"
+
+        filas = conexion.execute(
+            f"""
+            SELECT
+                ss.id,
+                ss.seccion_id,
+                ss.nombre,
+                ss.descripcion,
+                ss.activo,
+                ss.fecha_creacion,
+                s.nombre AS seccion_nombre,
+                s.activo AS seccion_activa,
+                COUNT(DISTINCT it.id) AS total_materiales
+            FROM subsecciones ss
+            INNER JOIN secciones s
+                ON s.id = ss.seccion_id
+            LEFT JOIN inventario_tecnico it
+                ON it.subseccion_id = ss.id
+                AND it.activo = 1
+            {condicion}
+            GROUP BY
+                ss.id,
+                ss.seccion_id,
+                ss.nombre,
+                ss.descripcion,
+                ss.activo,
+                ss.fecha_creacion,
+                s.nombre,
+                s.activo
+            ORDER BY
+                s.nombre,
+                ss.activo DESC,
+                UPPER(ss.nombre)
+            """
+        ).fetchall()
+
+        return [
+            dict(
+                fila
+            )
+            for fila in filas
+        ]
+
+    finally:
+        conexion.close()
+
+
+def obtener_pedidos_pendientes_por_codigo(
+    codigo_sap: str,
+) -> float:
+    if not codigo_sap:
+        return 0.0
+
+    conexion = conectar_bd()
+
+    try:
+        fila = conexion.execute(
+            """
+            SELECT
+                COALESCE(
+                    SUM(
+                        MAX(
+                            cantidad_pedir
+                            - cantidad_recibida,
+                            0
+                        )
+                    ),
+                    0
+                ) AS pendiente
+            FROM solicitud_detalle
+            WHERE codigo_sap = ?
+            AND estado IN (
+                'PENDIENTE',
+                'RECIBIDO_PARCIAL'
+            )
+            """,
+            (
+                codigo_sap,
+            ),
+        ).fetchone()
+
+        return float(
+            fila[
+                "pendiente"
+            ]
+            or 0
+        )
+
+    finally:
+        conexion.close()
+
+
+def obtener_inventario_tecnico():
+    conexion = conectar_bd()
+
+    try:
+        filas = conexion.execute(
+            """
+            SELECT
+                it.id,
+                it.codigo_sap,
+                it.descripcion,
+                it.unidad_medida,
+                it.seccion_id,
+                it.subseccion_id,
+                it.tipo_control,
+                it.stock_minimo,
+                it.stock_objetivo,
+                it.origen_dato,
+                it.observaciones,
+                it.activo,
+                s.nombre AS seccion_nombre,
+                s.activo AS seccion_activa,
+                ss.nombre AS subseccion_nombre,
+                ss.activo AS subseccion_activa,
+                COALESCE(ms.existencia, 0) AS stock_sap,
+                COALESCE(ms.valor_unitario, 0) AS valor_unitario
+            FROM inventario_tecnico it
+            INNER JOIN secciones s
+                ON s.id = it.seccion_id
+            LEFT JOIN subsecciones ss
+                ON ss.id = it.subseccion_id
+            LEFT JOIN materiales_sap ms
+                ON ms.codigo_sap = it.codigo_sap
+            ORDER BY
+                it.activo DESC,
+                s.nombre,
+                COALESCE(ss.nombre, ''),
+                it.descripcion
+            """
+        ).fetchall()
+
+        resultado = []
+
+        for fila in filas:
+            item = dict(
+                fila
+            )
+
+            codigo = str(
+                item.get(
+                    "codigo_sap",
+                    ""
+                )
+                or ""
+            ).strip()
+
+            pendiente = 0.0
+
+            if codigo and codigo != "CREAR":
+                pendiente = (
+                    obtener_pedidos_pendientes_por_codigo(
+                        codigo
+                    )
+                )
+
+            stock_sap = float(
+                item.get(
+                    "stock_sap"
+                )
+                or 0
+            )
+
+            stock_minimo = float(
+                item.get(
+                    "stock_minimo"
+                )
+                or 0
+            )
+
+            stock_objetivo = float(
+                item.get(
+                    "stock_objetivo"
+                )
+                or 0
+            )
+
+            stock_proyectado = (
+                stock_sap
+                + pendiente
+            )
+
+            faltante_minimo = max(
+                0,
+                stock_minimo
+                - stock_proyectado,
+            )
+
+            faltante_objetivo = max(
+                0,
+                stock_objetivo
+                - stock_proyectado,
+            )
+
+            if not int(
+                item.get(
+                    "activo"
+                )
+                or 0
+            ):
+                estado_stock = "INACTIVO"
+
+            elif stock_proyectado < stock_minimo:
+                estado_stock = "CRITICO"
+
+            elif (
+                stock_objetivo > 0
+                and stock_proyectado
+                < stock_objetivo
+            ):
+                estado_stock = "BAJO"
+
+            else:
+                estado_stock = "OK"
+
+            item[
+                "pedido_pendiente"
+            ] = pendiente
+
+            item[
+                "stock_proyectado"
+            ] = stock_proyectado
+
+            item[
+                "faltante_minimo"
+            ] = faltante_minimo
+
+            item[
+                "faltante_objetivo"
+            ] = faltante_objetivo
+
+            item[
+                "estado_stock"
+            ] = estado_stock
+
+            resultado.append(
+                item
+            )
+
+        return resultado
+
+    finally:
+        conexion.close()
+
+
+def crear_seccion(
+    nombre: str,
+    descripcion: str = "",
+):
+    nombre = str(
+        nombre
+        or ""
+    ).strip()
+
+    descripcion = str(
+        descripcion
+        or ""
+    ).strip()
+
+    if not nombre:
+        raise ValueError(
+            "Ingrese el nombre de la sección."
+        )
+
+    conexion = conectar_bd()
+
+    try:
+        existente = conexion.execute(
+            """
+            SELECT id
+            FROM secciones
+            WHERE UPPER(nombre) = UPPER(?)
+            """,
+            (
+                nombre,
+            ),
+        ).fetchone()
+
+        if existente:
+            raise ValueError(
+                "Ya existe una sección con ese nombre."
+            )
+
+        conexion.execute(
+            """
+            INSERT INTO secciones (
+                nombre,
+                descripcion,
+                activo,
+                fecha_creacion
+            )
+            VALUES (
+                ?,
+                ?,
+                1,
+                ?
+            )
+            """,
+            (
+                nombre,
+                descripcion,
+                datetime.now().isoformat(
+                    timespec="seconds"
+                ),
+            ),
+        )
+
+        conexion.commit()
+
+    except Exception:
+        conexion.rollback()
+        raise
+
+    finally:
+        conexion.close()
+
+
+def editar_seccion(
+    seccion_id: int,
+    nombre: str,
+    descripcion: str = "",
+):
+    nombre = str(
+        nombre
+        or ""
+    ).strip()
+
+    descripcion = str(
+        descripcion
+        or ""
+    ).strip()
+
+    if not nombre:
+        raise ValueError(
+            "Ingrese el nombre de la sección."
+        )
+
+    conexion = conectar_bd()
+
+    try:
+        duplicada = conexion.execute(
+            """
+            SELECT id
+            FROM secciones
+            WHERE UPPER(nombre) = UPPER(?)
+            AND id <> ?
+            """,
+            (
+                nombre,
+                seccion_id,
+            ),
+        ).fetchone()
+
+        if duplicada:
+            raise ValueError(
+                "Ya existe otra sección con ese nombre."
+            )
+
+        cursor = conexion.execute(
+            """
+            UPDATE secciones
+            SET
+                nombre = ?,
+                descripcion = ?
+            WHERE id = ?
+            """,
+            (
+                nombre,
+                descripcion,
+                seccion_id,
+            ),
+        )
+
+        if cursor.rowcount == 0:
+            raise ValueError(
+                "La sección no existe."
+            )
+
+        conexion.commit()
+
+    except Exception:
+        conexion.rollback()
+        raise
+
+    finally:
+        conexion.close()
+
+
+def cambiar_estado_seccion(
+    seccion_id: int,
+    activo: bool,
+):
+    conexion = conectar_bd()
+
+    try:
+        cursor = conexion.execute(
+            """
+            UPDATE secciones
+            SET activo = ?
+            WHERE id = ?
+            """,
+            (
+                1 if activo else 0,
+                seccion_id,
+            ),
+        )
+
+        if cursor.rowcount == 0:
+            raise ValueError(
+                "La sección no existe."
+            )
+
+        if not activo:
+            conexion.execute(
+                """
+                UPDATE subsecciones
+                SET activo = 0
+                WHERE seccion_id = ?
+                """,
+                (
+                    seccion_id,
+                ),
+            )
+
+        conexion.commit()
+
+    except Exception:
+        conexion.rollback()
+        raise
+
+    finally:
+        conexion.close()
+
+
+def eliminar_seccion_definitiva(
+    seccion_id: int,
+):
+    conexion = conectar_bd()
+
+    try:
+        total_subsecciones = conexion.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM subsecciones
+            WHERE seccion_id = ?
+            """,
+            (
+                seccion_id,
+            ),
+        ).fetchone()[
+            "total"
+        ]
+
+        total_materiales = conexion.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM inventario_tecnico
+            WHERE seccion_id = ?
+            """,
+            (
+                seccion_id,
+            ),
+        ).fetchone()[
+            "total"
+        ]
+
+        if int(
+            total_subsecciones
+            or 0
+        ) > 0:
+            raise ValueError(
+                "No se puede eliminar definitivamente la sección "
+                "porque todavía tiene subsecciones."
+            )
+
+        if int(
+            total_materiales
+            or 0
+        ) > 0:
+            raise ValueError(
+                "No se puede eliminar definitivamente la sección "
+                "porque todavía tiene materiales asociados."
+            )
+
+        cursor = conexion.execute(
+            """
+            DELETE FROM secciones
+            WHERE id = ?
+            """,
+            (
+                seccion_id,
+            ),
+        )
+
+        if cursor.rowcount == 0:
+            raise ValueError(
+                "La sección no existe."
+            )
+
+        conexion.commit()
+
+    except Exception:
+        conexion.rollback()
+        raise
+
+    finally:
+        conexion.close()
+
+
+def crear_subseccion(
+    seccion_id: int,
+    nombre: str,
+    descripcion: str = "",
+):
+    nombre = str(
+        nombre
+        or ""
+    ).strip()
+
+    descripcion = str(
+        descripcion
+        or ""
+    ).strip()
+
+    if not nombre:
+        raise ValueError(
+            "Ingrese el nombre de la subsección."
+        )
+
+    conexion = conectar_bd()
+
+    try:
+        seccion = conexion.execute(
+            """
+            SELECT
+                id,
+                activo
+            FROM secciones
+            WHERE id = ?
+            """,
+            (
+                seccion_id,
+            ),
+        ).fetchone()
+
+        if seccion is None:
+            raise ValueError(
+                "La sección seleccionada no existe."
+            )
+
+        if not int(
+            seccion[
+                "activo"
+            ]
+            or 0
+        ):
+            raise ValueError(
+                "La sección está inactiva."
+            )
+
+        duplicada = conexion.execute(
+            """
+            SELECT id
+            FROM subsecciones
+            WHERE seccion_id = ?
+            AND UPPER(nombre) = UPPER(?)
+            """,
+            (
+                seccion_id,
+                nombre,
+            ),
+        ).fetchone()
+
+        if duplicada:
+            raise ValueError(
+                "Ya existe una subsección con ese nombre "
+                "dentro de la sección."
+            )
+
+        conexion.execute(
+            """
+            INSERT INTO subsecciones (
+                seccion_id,
+                nombre,
+                descripcion,
+                activo,
+                fecha_creacion
+            )
+            VALUES (
+                ?,
+                ?,
+                ?,
+                1,
+                ?
+            )
+            """,
+            (
+                seccion_id,
+                nombre,
+                descripcion,
+                datetime.now().isoformat(
+                    timespec="seconds"
+                ),
+            ),
+        )
+
+        conexion.commit()
+
+    except Exception:
+        conexion.rollback()
+        raise
+
+    finally:
+        conexion.close()
+
+
+def editar_subseccion(
+    subseccion_id: int,
+    nombre: str,
+    descripcion: str = "",
+):
+    nombre = str(
+        nombre
+        or ""
+    ).strip()
+
+    descripcion = str(
+        descripcion
+        or ""
+    ).strip()
+
+    if not nombre:
+        raise ValueError(
+            "Ingrese el nombre de la subsección."
+        )
+
+    conexion = conectar_bd()
+
+    try:
+        actual = conexion.execute(
+            """
+            SELECT seccion_id
+            FROM subsecciones
+            WHERE id = ?
+            """,
+            (
+                subseccion_id,
+            ),
+        ).fetchone()
+
+        if actual is None:
+            raise ValueError(
+                "La subsección no existe."
+            )
+
+        duplicada = conexion.execute(
+            """
+            SELECT id
+            FROM subsecciones
+            WHERE seccion_id = ?
+            AND UPPER(nombre) = UPPER(?)
+            AND id <> ?
+            """,
+            (
+                actual[
+                    "seccion_id"
+                ],
+                nombre,
+                subseccion_id,
+            ),
+        ).fetchone()
+
+        if duplicada:
+            raise ValueError(
+                "Ya existe otra subsección con ese nombre."
+            )
+
+        conexion.execute(
+            """
+            UPDATE subsecciones
+            SET
+                nombre = ?,
+                descripcion = ?
+            WHERE id = ?
+            """,
+            (
+                nombre,
+                descripcion,
+                subseccion_id,
+            ),
+        )
+
+        conexion.commit()
+
+    except Exception:
+        conexion.rollback()
+        raise
+
+    finally:
+        conexion.close()
+
+
+def cambiar_estado_subseccion(
+    subseccion_id: int,
+    activo: bool,
+):
+    conexion = conectar_bd()
+
+    try:
+        if activo:
+            fila = conexion.execute(
+                """
+                SELECT
+                    s.activo AS seccion_activa
+                FROM subsecciones ss
+                INNER JOIN secciones s
+                    ON s.id = ss.seccion_id
+                WHERE ss.id = ?
+                """,
+                (
+                    subseccion_id,
+                ),
+            ).fetchone()
+
+            if fila is None:
+                raise ValueError(
+                    "La subsección no existe."
+                )
+
+            if not int(
+                fila[
+                    "seccion_activa"
+                ]
+                or 0
+            ):
+                raise ValueError(
+                    "No puede reactivar esta subsección "
+                    "mientras su sección esté inactiva."
+                )
+
+        cursor = conexion.execute(
+            """
+            UPDATE subsecciones
+            SET activo = ?
+            WHERE id = ?
+            """,
+            (
+                1 if activo else 0,
+                subseccion_id,
+            ),
+        )
+
+        if cursor.rowcount == 0:
+            raise ValueError(
+                "La subsección no existe."
+            )
+
+        conexion.commit()
+
+    except Exception:
+        conexion.rollback()
+        raise
+
+    finally:
+        conexion.close()
+
+
+def eliminar_subseccion_definitiva(
+    subseccion_id: int,
+):
+    conexion = conectar_bd()
+
+    try:
+        total_materiales = conexion.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM inventario_tecnico
+            WHERE subseccion_id = ?
+            """,
+            (
+                subseccion_id,
+            ),
+        ).fetchone()[
+            "total"
+        ]
+
+        if int(
+            total_materiales
+            or 0
+        ) > 0:
+            raise ValueError(
+                "No se puede eliminar definitivamente la subsección "
+                "porque todavía tiene materiales asociados."
+            )
+
+        cursor = conexion.execute(
+            """
+            DELETE FROM subsecciones
+            WHERE id = ?
+            """,
+            (
+                subseccion_id,
+            ),
+        )
+
+        if cursor.rowcount == 0:
+            raise ValueError(
+                "La subsección no existe."
+            )
+
+        conexion.commit()
+
+    except Exception:
+        conexion.rollback()
+        raise
+
+    finally:
+        conexion.close()
+
+
+def crear_material_inventario(
+    codigo_sap: str,
+    descripcion: str,
+    unidad_medida: str,
+    seccion_id: int,
+    subseccion_id: int | None,
+    stock_minimo: float,
+    stock_objetivo: float,
+    observaciones: str = "",
+    origen_dato: str = "SAP",
+):
+    codigo_sap = str(
+        codigo_sap
+        or ""
+    ).strip()
+
+    descripcion = str(
+        descripcion
+        or ""
+    ).strip()
+
+    unidad_medida = str(
+        unidad_medida
+        or ""
+    ).strip()
+
+    observaciones = str(
+        observaciones
+        or ""
+    ).strip()
+
+    origen_dato = str(
+        origen_dato
+        or "SAP"
+    ).strip().upper()
+
+    if not descripcion:
+        raise ValueError(
+            "Ingrese la descripción del material."
+        )
+
+    if not unidad_medida:
+        raise ValueError(
+            "Ingrese la unidad de medida."
+        )
+
+    if stock_minimo < 0:
+        raise ValueError(
+            "El stock mínimo no puede ser negativo."
+        )
+
+    if stock_objetivo < stock_minimo:
+        raise ValueError(
+            "El stock objetivo debe ser igual o mayor "
+            "que el stock mínimo."
+        )
+
+    conexion = conectar_bd()
+
+    try:
+        seccion = conexion.execute(
+            """
+            SELECT activo
+            FROM secciones
+            WHERE id = ?
+            """,
+            (
+                seccion_id,
+            ),
+        ).fetchone()
+
+        if seccion is None:
+            raise ValueError(
+                "La sección seleccionada no existe."
+            )
+
+        if not int(
+            seccion[
+                "activo"
+            ]
+            or 0
+        ):
+            raise ValueError(
+                "La sección seleccionada está inactiva."
+            )
+
+        if subseccion_id:
+            subseccion = conexion.execute(
+                """
+                SELECT
+                    seccion_id,
+                    activo
+                FROM subsecciones
+                WHERE id = ?
+                """,
+                (
+                    subseccion_id,
+                ),
+            ).fetchone()
+
+            if subseccion is None:
+                raise ValueError(
+                    "La subsección seleccionada no existe."
+                )
+
+            if int(
+                subseccion[
+                    "seccion_id"
+                ]
+            ) != int(
+                seccion_id
+            ):
+                raise ValueError(
+                    "La subsección no pertenece a la sección seleccionada."
+                )
+
+            if not int(
+                subseccion[
+                    "activo"
+                ]
+                or 0
+            ):
+                raise ValueError(
+                    "La subsección seleccionada está inactiva."
+                )
+
+        if codigo_sap and codigo_sap != "CREAR":
+            duplicado = conexion.execute(
+                """
+                SELECT id
+                FROM inventario_tecnico
+                WHERE codigo_sap = ?
+                AND seccion_id = ?
+                AND COALESCE(subseccion_id, 0)
+                    = COALESCE(?, 0)
+                AND activo = 1
+                """,
+                (
+                    codigo_sap,
+                    seccion_id,
+                    subseccion_id,
+                ),
+            ).fetchone()
+
+            if duplicado:
+                raise ValueError(
+                    "Este material ya está agregado en esa "
+                    "sección/subsección."
+                )
+
+        conexion.execute(
+            """
+            INSERT INTO inventario_tecnico (
+                codigo_sap,
+                descripcion,
+                unidad_medida,
+                seccion_id,
+                subseccion_id,
+                tipo_control,
+                stock_minimo,
+                stock_objetivo,
+                factor_minimo,
+                factor_objetivo,
+                origen_dato,
+                observaciones,
+                activo,
+                fecha_creacion
+            )
+            VALUES (
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                'stock',
+                ?,
+                ?,
+                1,
+                1,
+                ?,
+                ?,
+                1,
+                ?
+            )
+            """,
+            (
+                codigo_sap
+                or "CREAR",
+                descripcion,
+                unidad_medida,
+                seccion_id,
+                subseccion_id,
+                stock_minimo,
+                stock_objetivo,
+                origen_dato,
+                observaciones,
+                datetime.now().isoformat(
+                    timespec="seconds"
+                ),
+            ),
+        )
+
+        conexion.commit()
+
+    except Exception:
+        conexion.rollback()
+        raise
+
+    finally:
+        conexion.close()
+
+
+def editar_material_inventario(
+    inventario_id: int,
+    seccion_id: int,
+    subseccion_id: int | None,
+    stock_minimo: float,
+    stock_objetivo: float,
+    observaciones: str = "",
+):
+    if stock_minimo < 0:
+        raise ValueError(
+            "El stock mínimo no puede ser negativo."
+        )
+
+    if stock_objetivo < stock_minimo:
+        raise ValueError(
+            "El stock objetivo debe ser igual o mayor "
+            "que el stock mínimo."
+        )
+
+    conexion = conectar_bd()
+
+    try:
+        seccion = conexion.execute(
+            """
+            SELECT activo
+            FROM secciones
+            WHERE id = ?
+            """,
+            (
+                seccion_id,
+            ),
+        ).fetchone()
+
+        if seccion is None:
+            raise ValueError(
+                "La sección no existe."
+            )
+
+        if subseccion_id:
+            subseccion = conexion.execute(
+                """
+                SELECT
+                    seccion_id,
+                    activo
+                FROM subsecciones
+                WHERE id = ?
+                """,
+                (
+                    subseccion_id,
+                ),
+            ).fetchone()
+
+            if subseccion is None:
+                raise ValueError(
+                    "La subsección no existe."
+                )
+
+            if int(
+                subseccion[
+                    "seccion_id"
+                ]
+            ) != int(
+                seccion_id
+            ):
+                raise ValueError(
+                    "La subsección no pertenece a la sección."
+                )
+
+        cursor = conexion.execute(
+            """
+            UPDATE inventario_tecnico
+            SET
+                seccion_id = ?,
+                subseccion_id = ?,
+                stock_minimo = ?,
+                stock_objetivo = ?,
+                observaciones = ?
+            WHERE id = ?
+            """,
+            (
+                seccion_id,
+                subseccion_id,
+                stock_minimo,
+                stock_objetivo,
+                str(
+                    observaciones
+                    or ""
+                ).strip(),
+                inventario_id,
+            ),
+        )
+
+        if cursor.rowcount == 0:
+            raise ValueError(
+                "El material de inventario no existe."
+            )
+
+        conexion.commit()
+
+    except Exception:
+        conexion.rollback()
+        raise
+
+    finally:
+        conexion.close()
+
+
+def cambiar_estado_material_inventario(
+    inventario_id: int,
+    activo: bool,
+):
+    conexion = conectar_bd()
+
+    try:
+        cursor = conexion.execute(
+            """
+            UPDATE inventario_tecnico
+            SET activo = ?
+            WHERE id = ?
+            """,
+            (
+                1 if activo else 0,
+                inventario_id,
+            ),
+        )
+
+        if cursor.rowcount == 0:
+            raise ValueError(
+                "El material de inventario no existe."
+            )
+
+        conexion.commit()
+
+    except Exception:
+        conexion.rollback()
+        raise
+
+    finally:
+        conexion.close()
+
+
+def eliminar_material_inventario(
+    inventario_id: int,
+):
+    conexion = conectar_bd()
+
+    try:
+        total_maquinas = conexion.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM inventario_maquinas
+            WHERE inventario_id = ?
+            """,
+            (
+                inventario_id,
+            ),
+        ).fetchone()[
+            "total"
+        ]
+
+        if int(
+            total_maquinas
+            or 0
+        ) > 0:
+            raise ValueError(
+                "No se puede eliminar definitivamente este material "
+                "porque tiene máquinas asociadas. Puede desactivarlo."
+            )
+
+        cursor = conexion.execute(
+            """
+            DELETE FROM inventario_tecnico
+            WHERE id = ?
+            """,
+            (
+                inventario_id,
+            ),
+        )
+
+        if cursor.rowcount == 0:
+            raise ValueError(
+                "El material no existe."
+            )
+
+        conexion.commit()
+
+    except Exception:
+        conexion.rollback()
+        raise
+
+    finally:
+        conexion.close()
+
+
 @repuestos_bp.route("/seguimiento")
 def seguimiento():
     inicializar_bd()
@@ -2564,6 +4263,37 @@ def seguimiento():
         resumen=resumen,
     )
 
+@repuestos_bp.route(
+    "/api/inventario/catalogo"
+)
+def api_catalogo_inventario():
+    inicializar_bd()
+
+    try:
+        secciones = obtener_secciones_inventario(
+            incluir_inactivas=False
+        )
+
+        subsecciones = obtener_subsecciones_inventario(
+            incluir_inactivas=False
+        )
+
+        return jsonify(
+            {
+                "ok": True,
+                "secciones": secciones,
+                "subsecciones": subsecciones,
+            }
+        )
+
+    except Exception as error:
+        return jsonify(
+            {
+                "ok": False,
+                "error":
+                    f"No fue posible consultar el inventario: {error}",
+            }
+        ), 500
 
 @repuestos_bp.route(
     "/api/seguimiento/<int:detalle_id>/confirmar-recepcion",
@@ -2609,6 +4339,730 @@ def api_confirmar_recepcion(
                 "ok": False,
                 "error":
                     f"No fue posible confirmar la recepción: {error}",
+            }
+        ), 500
+
+
+@repuestos_bp.route("/recibidos")
+def recibidos_por_retirar():
+    inicializar_bd()
+
+    registros = obtener_recibidos_por_retirar()
+
+    resumen = {
+        "materiales":
+            len(
+                registros
+            ),
+
+        "unidades":
+            sum(
+                float(
+                    item.get(
+                        "cantidad_pendiente_retiro"
+                    )
+                    or 0
+                )
+                for item in registros
+            ),
+    }
+
+    return render_template(
+        "repuestos/recibidos.html",
+        registros=registros,
+        resumen=resumen,
+    )
+
+
+@repuestos_bp.route(
+    "/api/recibidos/<int:detalle_id>/confirmar-retiro",
+    methods=["POST"],
+)
+def api_confirmar_retiro(
+    detalle_id,
+):
+    datos = request.get_json(
+        silent=True
+    ) or {}
+
+    cantidad = convertir_numero(
+        datos.get(
+            "cantidad"
+        )
+    )
+
+    observaciones = str(
+        datos.get(
+            "observaciones",
+            ""
+        )
+    ).strip()
+
+    try:
+        resultado = confirmar_retiro_detalle(
+            detalle_id,
+            cantidad,
+            observaciones,
+        )
+
+        return jsonify(
+            {
+                "ok":
+                    True,
+
+                "resultado":
+                    resultado,
+            }
+        )
+
+    except ValueError as error:
+        return jsonify(
+            {
+                "ok":
+                    False,
+
+                "error":
+                    str(
+                        error
+                    ),
+            }
+        ), 400
+
+    except Exception as error:
+        return jsonify(
+            {
+                "ok":
+                    False,
+
+                "error":
+                    f"No fue posible confirmar el retiro: {error}",
+            }
+        ), 500
+
+
+@repuestos_bp.route(
+    "/recibidos/exportar"
+)
+def exportar_recibidos():
+    try:
+        ruta = generar_excel_retiros()
+
+        return send_file(
+            ruta,
+            as_attachment=True,
+            download_name=ruta.name,
+        )
+
+    except ValueError as error:
+        flash(
+            str(
+                error
+            ),
+            "error",
+        )
+
+        return redirect(
+            url_for(
+                "repuestos.recibidos_por_retirar"
+            )
+        )
+
+
+@repuestos_bp.route("/inventario")
+def inventario_tecnico():
+    inicializar_bd()
+
+    secciones = obtener_secciones_inventario(
+        incluir_inactivas=True
+    )
+
+    subsecciones = obtener_subsecciones_inventario(
+        incluir_inactivas=True
+    )
+
+    inventario = obtener_inventario_tecnico()
+
+    resumen = {
+        "total":
+            sum(
+                1
+                for item in inventario
+                if int(
+                    item.get(
+                        "activo"
+                    )
+                    or 0
+                )
+            ),
+
+        "criticos":
+            sum(
+                1
+                for item in inventario
+                if item.get(
+                    "estado_stock"
+                ) == "CRITICO"
+            ),
+
+        "bajos":
+            sum(
+                1
+                for item in inventario
+                if item.get(
+                    "estado_stock"
+                ) == "BAJO"
+            ),
+
+        "ok":
+            sum(
+                1
+                for item in inventario
+                if item.get(
+                    "estado_stock"
+                ) == "OK"
+            ),
+    }
+
+    return render_template(
+        "repuestos/inventario.html",
+        secciones=secciones,
+        subsecciones=subsecciones,
+        inventario=inventario,
+        resumen=resumen,
+    )
+
+
+@repuestos_bp.route(
+    "/api/inventario/secciones",
+    methods=["POST"],
+)
+def api_crear_seccion():
+    datos = request.get_json(
+        silent=True
+    ) or {}
+
+    try:
+        crear_seccion(
+            datos.get(
+                "nombre",
+                ""
+            ),
+            datos.get(
+                "descripcion",
+                ""
+            ),
+        )
+
+        return jsonify(
+            {
+                "ok":
+                    True
+            }
+        )
+
+    except ValueError as error:
+        return jsonify(
+            {
+                "ok":
+                    False,
+                "error":
+                    str(
+                        error
+                    ),
+            }
+        ), 400
+
+    except Exception as error:
+        return jsonify(
+            {
+                "ok":
+                    False,
+                "error":
+                    f"No fue posible crear la sección: {error}",
+            }
+        ), 500
+
+
+@repuestos_bp.route(
+    "/api/inventario/secciones/<int:seccion_id>",
+    methods=["PUT", "DELETE"],
+)
+def api_gestionar_seccion(
+    seccion_id,
+):
+    datos = request.get_json(
+        silent=True
+    ) or {}
+
+    try:
+        if request.method == "DELETE":
+            eliminar_seccion_definitiva(
+                seccion_id
+            )
+
+        else:
+            accion = str(
+                datos.get(
+                    "accion",
+                    "editar"
+                )
+            ).strip().lower()
+
+            if accion == "editar":
+                editar_seccion(
+                    seccion_id,
+                    datos.get(
+                        "nombre",
+                        ""
+                    ),
+                    datos.get(
+                        "descripcion",
+                        ""
+                    ),
+                )
+
+            elif accion == "desactivar":
+                cambiar_estado_seccion(
+                    seccion_id,
+                    False,
+                )
+
+            elif accion == "reactivar":
+                cambiar_estado_seccion(
+                    seccion_id,
+                    True,
+                )
+
+            else:
+                raise ValueError(
+                    "Acción de sección no válida."
+                )
+
+        return jsonify(
+            {
+                "ok":
+                    True
+            }
+        )
+
+    except ValueError as error:
+        return jsonify(
+            {
+                "ok":
+                    False,
+                "error":
+                    str(
+                        error
+                    ),
+            }
+        ), 400
+
+    except Exception as error:
+        return jsonify(
+            {
+                "ok":
+                    False,
+                "error":
+                    f"No fue posible actualizar la sección: {error}",
+            }
+        ), 500
+
+
+@repuestos_bp.route(
+    "/api/inventario/subsecciones",
+    methods=["POST"],
+)
+def api_crear_subseccion():
+    datos = request.get_json(
+        silent=True
+    ) or {}
+
+    try:
+        seccion_id = int(
+            datos.get(
+                "seccion_id"
+            )
+        )
+
+        crear_subseccion(
+            seccion_id,
+            datos.get(
+                "nombre",
+                ""
+            ),
+            datos.get(
+                "descripcion",
+                ""
+            ),
+        )
+
+        return jsonify(
+            {
+                "ok":
+                    True
+            }
+        )
+
+    except (
+        TypeError,
+        ValueError,
+    ) as error:
+        return jsonify(
+            {
+                "ok":
+                    False,
+                "error":
+                    str(
+                        error
+                    )
+                    or "Seleccione una sección.",
+            }
+        ), 400
+
+    except Exception as error:
+        return jsonify(
+            {
+                "ok":
+                    False,
+                "error":
+                    f"No fue posible crear la subsección: {error}",
+            }
+        ), 500
+
+
+@repuestos_bp.route(
+    "/api/inventario/subsecciones/<int:subseccion_id>",
+    methods=["PUT", "DELETE"],
+)
+def api_gestionar_subseccion(
+    subseccion_id,
+):
+    datos = request.get_json(
+        silent=True
+    ) or {}
+
+    try:
+        if request.method == "DELETE":
+            eliminar_subseccion_definitiva(
+                subseccion_id
+            )
+
+        else:
+            accion = str(
+                datos.get(
+                    "accion",
+                    "editar"
+                )
+            ).strip().lower()
+
+            if accion == "editar":
+                editar_subseccion(
+                    subseccion_id,
+                    datos.get(
+                        "nombre",
+                        ""
+                    ),
+                    datos.get(
+                        "descripcion",
+                        ""
+                    ),
+                )
+
+            elif accion == "desactivar":
+                cambiar_estado_subseccion(
+                    subseccion_id,
+                    False,
+                )
+
+            elif accion == "reactivar":
+                cambiar_estado_subseccion(
+                    subseccion_id,
+                    True,
+                )
+
+            else:
+                raise ValueError(
+                    "Acción de subsección no válida."
+                )
+
+        return jsonify(
+            {
+                "ok":
+                    True
+            }
+        )
+
+    except ValueError as error:
+        return jsonify(
+            {
+                "ok":
+                    False,
+                "error":
+                    str(
+                        error
+                    ),
+            }
+        ), 400
+
+    except Exception as error:
+        return jsonify(
+            {
+                "ok":
+                    False,
+                "error":
+                    f"No fue posible actualizar la subsección: {error}",
+            }
+        ), 500
+
+
+@repuestos_bp.route(
+    "/api/inventario/materiales",
+    methods=["POST"],
+)
+def api_crear_material_inventario():
+    datos = request.get_json(
+        silent=True
+    ) or {}
+
+    try:
+        seccion_id = int(
+            datos.get(
+                "seccion_id"
+            )
+        )
+
+        subseccion_valor = datos.get(
+            "subseccion_id"
+        )
+
+        subseccion_id = (
+            int(
+                subseccion_valor
+            )
+            if subseccion_valor
+            not in (
+                None,
+                "",
+                0,
+                "0",
+            )
+            else None
+        )
+
+        crear_material_inventario(
+            codigo_sap=
+                datos.get(
+                    "codigo_sap",
+                    ""
+                ),
+
+            descripcion=
+                datos.get(
+                    "descripcion",
+                    ""
+                ),
+
+            unidad_medida=
+                datos.get(
+                    "unidad_medida",
+                    ""
+                ),
+
+            seccion_id=
+                seccion_id,
+
+            subseccion_id=
+                subseccion_id,
+
+            stock_minimo=
+                convertir_numero(
+                    datos.get(
+                        "stock_minimo"
+                    )
+                ),
+
+            stock_objetivo=
+                convertir_numero(
+                    datos.get(
+                        "stock_objetivo"
+                    )
+                ),
+
+            observaciones=
+                datos.get(
+                    "observaciones",
+                    ""
+                ),
+
+            origen_dato=
+                datos.get(
+                    "origen_dato",
+                    "SAP"
+                ),
+        )
+
+        return jsonify(
+            {
+                "ok":
+                    True
+            }
+        )
+
+    except (
+        TypeError,
+        ValueError,
+    ) as error:
+        return jsonify(
+            {
+                "ok":
+                    False,
+                "error":
+                    str(
+                        error
+                    )
+                    or "Revise la información del material.",
+            }
+        ), 400
+
+    except Exception as error:
+        return jsonify(
+            {
+                "ok":
+                    False,
+                "error":
+                    f"No fue posible agregar el material: {error}",
+            }
+        ), 500
+
+
+@repuestos_bp.route(
+    "/api/inventario/materiales/<int:inventario_id>",
+    methods=["PUT", "DELETE"],
+)
+def api_gestionar_material_inventario(
+    inventario_id,
+):
+    datos = request.get_json(
+        silent=True
+    ) or {}
+
+    try:
+        if request.method == "DELETE":
+            eliminar_material_inventario(
+                inventario_id
+            )
+
+        else:
+            accion = str(
+                datos.get(
+                    "accion",
+                    "editar"
+                )
+            ).strip().lower()
+
+            if accion == "editar":
+                seccion_id = int(
+                    datos.get(
+                        "seccion_id"
+                    )
+                )
+
+                subseccion_valor = datos.get(
+                    "subseccion_id"
+                )
+
+                subseccion_id = (
+                    int(
+                        subseccion_valor
+                    )
+                    if subseccion_valor
+                    not in (
+                        None,
+                        "",
+                        0,
+                        "0",
+                    )
+                    else None
+                )
+
+                editar_material_inventario(
+                    inventario_id=
+                        inventario_id,
+
+                    seccion_id=
+                        seccion_id,
+
+                    subseccion_id=
+                        subseccion_id,
+
+                    stock_minimo=
+                        convertir_numero(
+                            datos.get(
+                                "stock_minimo"
+                            )
+                        ),
+
+                    stock_objetivo=
+                        convertir_numero(
+                            datos.get(
+                                "stock_objetivo"
+                            )
+                        ),
+
+                    observaciones=
+                        datos.get(
+                            "observaciones",
+                            ""
+                        ),
+                )
+
+            elif accion == "desactivar":
+                cambiar_estado_material_inventario(
+                    inventario_id,
+                    False,
+                )
+
+            elif accion == "reactivar":
+                cambiar_estado_material_inventario(
+                    inventario_id,
+                    True,
+                )
+
+            else:
+                raise ValueError(
+                    "Acción de material no válida."
+                )
+
+        return jsonify(
+            {
+                "ok":
+                    True
+            }
+        )
+
+    except (
+        TypeError,
+        ValueError,
+    ) as error:
+        return jsonify(
+            {
+                "ok":
+                    False,
+                "error":
+                    str(
+                        error
+                    )
+                    or "Revise la información del material.",
+            }
+        ), 400
+
+    except Exception as error:
+        return jsonify(
+            {
+                "ok":
+                    False,
+                "error":
+                    f"No fue posible actualizar el material: {error}",
             }
         ), 500
 

@@ -29,16 +29,14 @@
         title="Indicadores KPI - Próximamente"
     >📊</a>
 
-    <a
-    href="{{ url_for('repuestos.inicio') }}"
-    class="menu-item
-        {% if request.endpoint
-        and request.endpoint.startswith('repuestos.')
-        %}activo{% endif %}"
+<a
+    href="{{ url_for('repuestos.nueva_solicitud') }}"
+    class="menu-item"
     title="Repuestos"
 >
     📦
 </a>
+
     <a
         href="#"
         class="menu-item"
