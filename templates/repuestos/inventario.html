@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Inventario técnico | CMMS Industrial
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/repuestos.css') }}"
+    >
+</head>
+
+<body>
+
+{% include 'menu.html' %}
+
+<main class="pagina-repuestos">
+
+    <header class="encabezado-repuestos">
+
+        <div>
+
+            <span class="eyebrow">
+                REPUESTOS
+            </span>
+
+            <h1>
+                Inventario técnico
+            </h1>
+
+            <p>
+                Organice repuestos por secciones y subsecciones,
+                defina stock mínimo y controle faltantes.
+            </p>
+
+        </div>
+
+        <a
+            href="{{ url_for('repuestos.inicio') }}"
+            class="boton-secundario"
+        >
+            ← Volver
+        </a>
+
+    </header>
+
+
+    <section class="resumen-repuestos">
+
+        <article class="tarjeta-resumen">
+
+            <span class="icono-resumen">
+                📦
+            </span>
+
+            <div>
+                <small>
+                    Materiales activos
+                </small>
+
+                <strong>
+                    {{ resumen.total }}
+                </strong>
+            </div>
+
+        </article>
+
+
+        <article class="tarjeta-resumen">
+
+            <span class="icono-resumen">
+                🔴
+            </span>
+
+            <div>
+                <small>
+                    Críticos
+                </small>
+
+                <strong>
+                    {{ resumen.criticos }}
+                </strong>
+            </div>
+
+        </article>
+
+
+        <article class="tarjeta-resumen">
+
+            <span class="icono-resumen">
+                🟡
+            </span>
+
+            <div>
+                <small>
+                    Bajo objetivo
+                </small>
+
+                <strong>
+                    {{ resumen.bajos }}
+                </strong>
+            </div>
+
+        </article>
+
+
+        <article class="tarjeta-resumen">
+
+            <span class="icono-resumen">
+                🟢
+            </span>
+
+            <div>
+                <small>
+                    Stock correcto
+                </small>
+
+                <strong>
+                    {{ resumen.ok }}
+                </strong>
+            </div>
+
+        </article>
+
+    </section>
+
+
+    <section class="inventario-layout">
+
+        <aside class="panel-categorias">
+
+            <div class="titulo-seccion">
+
+                <div>
+                    <span class="eyebrow">
+                        ORGANIZACIÓN
+                    </span>
+
+                    <h2>
+                        Secciones
+                    </h2>
+                </div>
+
+                <button
+                    type="button"
+                    class="boton-principal boton-compacto"
+                    id="nuevaSeccion"
+                >
+                    + Sección
+                </button>
+
+            </div>
+
+
+            <div class="lista-secciones">
+
+                {% for seccion in secciones %}
+
+                    <article
+                        class="seccion-item {% if not seccion.activo %}elemento-inactivo{% endif %}"
+                    >
+
+                        <div class="seccion-cabecera">
+
+                            <div>
+                                <strong>
+                                    {{ seccion.nombre }}
+                                </strong>
+
+                                <small>
+                                    {{ seccion.total_subsecciones }}
+                                    subsecciones ·
+                                    {{ seccion.total_materiales }}
+                                    materiales
+                                </small>
+                            </div>
+
+
+                            <div class="acciones-mini">
+
+                                <button
+                                    type="button"
+                                    class="accion-mini editar-seccion"
+                                    data-id="{{ seccion.id }}"
+                                    data-nombre="{{ seccion.nombre }}"
+                                    data-descripcion="{{ seccion.descripcion or '' }}"
+                                >
+                                    ✎
+                                </button>
+
+
+                                {% if seccion.activo %}
+
+                                    <button
+                                        type="button"
+                                        class="accion-mini estado-seccion"
+                                        data-id="{{ seccion.id }}"
+                                        data-accion="desactivar"
+                                    >
+                                        ◼
+                                    </button>
+
+                                {% else %}
+
+                                    <button
+                                        type="button"
+                                        class="accion-mini estado-seccion"
+                                        data-id="{{ seccion.id }}"
+                                        data-accion="reactivar"
+                                    >
+                                        ▶
+                                    </button>
+
+                                {% endif %}
+
+
+                                <button
+                                    type="button"
+                                    class="accion-mini eliminar-seccion"
+                                    data-id="{{ seccion.id }}"
+                                    data-nombre="{{ seccion.nombre }}"
+                                >
+                                    🗑
+                                </button>
+
+                            </div>
+
+                        </div>
+
+
+                        {% if seccion.activo %}
+
+                            <button
+                                type="button"
+                                class="agregar-subseccion"
+                                data-seccion-id="{{ seccion.id }}"
+                                data-seccion-nombre="{{ seccion.nombre }}"
+                            >
+                                + Subsección
+                            </button>
+
+                        {% endif %}
+
+
+                        <div class="subsecciones-lista">
+
+                            {% for sub in subsecciones %}
+
+                                {% if sub.seccion_id == seccion.id %}
+
+                                    <div
+                                        class="subseccion-item {% if not sub.activo %}elemento-inactivo{% endif %}"
+                                    >
+
+                                        <div>
+
+                                            <span>
+                                                {{ sub.nombre }}
+                                            </span>
+
+                                            <small>
+                                                {{ sub.total_materiales }}
+                                                materiales
+                                            </small>
+
+                                        </div>
+
+
+                                        <div class="acciones-mini">
+
+                                            <button
+                                                type="button"
+                                                class="accion-mini editar-subseccion"
+                                                data-id="{{ sub.id }}"
+                                                data-nombre="{{ sub.nombre }}"
+                                                data-descripcion="{{ sub.descripcion or '' }}"
+                                            >
+                                                ✎
+                                            </button>
+
+
+                                            {% if sub.activo %}
+
+                                                <button
+                                                    type="button"
+                                                    class="accion-mini estado-subseccion"
+                                                    data-id="{{ sub.id }}"
+                                                    data-accion="desactivar"
+                                                >
+                                                    ◼
+                                                </button>
+
+                                            {% else %}
+
+                                                <button
+                                                    type="button"
+                                                    class="accion-mini estado-subseccion"
+                                                    data-id="{{ sub.id }}"
+                                                    data-accion="reactivar"
+                                                >
+                                                    ▶
+                                                </button>
+
+                                            {% endif %}
+
+
+                                            <button
+                                                type="button"
+                                                class="accion-mini eliminar-subseccion"
+                                                data-id="{{ sub.id }}"
+                                                data-nombre="{{ sub.nombre }}"
+                                            >
+                                                🗑
+                                            </button>
+
+                                        </div>
+
+                                    </div>
+
+                                {% endif %}
+
+                            {% endfor %}
+
+                        </div>
+
+                    </article>
+
+                {% endfor %}
+
+            </div>
+
+        </aside>
+
+
+        <section class="panel-inventario">
+
+            <div class="titulo-seccion">
+
+                <div>
+                    <span class="eyebrow">
+                        STOCK TÉCNICO
+                    </span>
+
+                    <h2>
+                        Materiales controlados
+                    </h2>
+                </div>
+
+
+                <button
+                    type="button"
+                    class="boton-principal"
+                    id="agregarMaterial"
+                >
+                    + Agregar material
+                </button>
+
+            </div>
+
+
+            <div class="filtros-inventario">
+
+                <input
+                    type="text"
+                    id="buscarInventario"
+                    placeholder="Buscar código o descripción..."
+                >
+
+
+                <select id="filtrarEstadoStock">
+
+                    <option value="">
+                        Todos los estados
+                    </option>
+
+                    <option value="CRITICO">
+                        Crítico
+                    </option>
+
+                    <option value="BAJO">
+                        Bajo objetivo
+                    </option>
+
+                    <option value="OK">
+                        Correcto
+                    </option>
+
+                    <option value="INACTIVO">
+                        Inactivo
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="tabla-contenedor">
+
+                <table class="tabla-pedido tabla-inventario">
+
+                    <thead>
+
+                        <tr>
+                            <th>Sección</th>
+                            <th>Subsección</th>
+                            <th>Código</th>
+                            <th>Material</th>
+                            <th>UM</th>
+                            <th>SAP</th>
+                            <th>Pedido pendiente</th>
+                            <th>Proyectado</th>
+                            <th>Mínimo</th>
+                            <th>Objetivo</th>
+                            <th>Estado</th>
+                            <th>Acción</th>
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="tablaInventario">
+
+                        {% if inventario %}
+
+                            {% for item in inventario %}
+
+                                <tr
+                                    data-busqueda="{{ (
+                                        (item.codigo_sap or '') ~ ' ' ~
+                                        (item.descripcion or '') ~ ' ' ~
+                                        (item.seccion_nombre or '') ~ ' ' ~
+                                        (item.subseccion_nombre or '')
+                                    ) | lower }}"
+                                    data-estado="{{ item.estado_stock }}"
+                                >
+
+                                    <td>
+                                        {{ item.seccion_nombre }}
+                                    </td>
+
+                                    <td>
+                                        {{ item.subseccion_nombre or '-' }}
+                                    </td>
+
+                                    <td>
+                                        {{ item.codigo_sap or 'CREAR' }}
+                                    </td>
+
+                                    <td>
+                                        {{ item.descripcion }}
+                                    </td>
+
+                                    <td>
+                                        {{ item.unidad_medida }}
+                                    </td>
+
+                                    <td>
+                                        {{ "{:,.2f}".format(item.stock_sap).rstrip("0").rstrip(".") }}
+                                    </td>
+
+                                    <td>
+                                        {{ "{:,.2f}".format(item.pedido_pendiente).rstrip("0").rstrip(".") }}
+                                    </td>
+
+                                    <td>
+                                        <strong>
+                                            {{ "{:,.2f}".format(item.stock_proyectado).rstrip("0").rstrip(".") }}
+                                        </strong>
+                                    </td>
+
+                                    <td>
+                                        {{ "{:,.2f}".format(item.stock_minimo).rstrip("0").rstrip(".") }}
+                                    </td>
+
+                                    <td>
+                                        {{ "{:,.2f}".format(item.stock_objetivo).rstrip("0").rstrip(".") }}
+                                    </td>
+
+                                    <td>
+
+                                        {% if item.estado_stock == "CRITICO" %}
+
+                                            <span class="estado-stock stock-critico">
+                                                Crítico
+                                            </span>
+
+                                        {% elif item.estado_stock == "BAJO" %}
+
+                                            <span class="estado-stock stock-bajo">
+                                                Bajo
+                                            </span>
+
+                                        {% elif item.estado_stock == "OK" %}
+
+                                            <span class="estado-stock stock-ok">
+                                                OK
+                                            </span>
+
+                                        {% else %}
+
+                                            <span class="estado-stock stock-inactivo">
+                                                Inactivo
+                                            </span>
+
+                                        {% endif %}
+
+                                    </td>
+
+                                    <td>
+
+                                        <div class="acciones-mini">
+
+                                            <button
+                                                type="button"
+                                                class="accion-mini editar-material-inventario"
+                                                data-id="{{ item.id }}"
+                                                data-seccion-id="{{ item.seccion_id }}"
+                                                data-subseccion-id="{{ item.subseccion_id or '' }}"
+                                                data-stock-minimo="{{ item.stock_minimo }}"
+                                                data-stock-objetivo="{{ item.stock_objetivo }}"
+                                                data-observaciones="{{ item.observaciones or '' }}"
+                                            >
+                                                ✎
+                                            </button>
+
+
+                                            {% if item.activo %}
+
+                                                <button
+                                                    type="button"
+                                                    class="accion-mini estado-material-inventario"
+                                                    data-id="{{ item.id }}"
+                                                    data-accion="desactivar"
+                                                >
+                                                    ◼
+                                                </button>
+
+                                            {% else %}
+
+                                                <button
+                                                    type="button"
+                                                    class="accion-mini estado-material-inventario"
+                                                    data-id="{{ item.id }}"
+                                                    data-accion="reactivar"
+                                                >
+                                                    ▶
+                                                </button>
+
+                                            {% endif %}
+
+
+                                            <button
+                                                type="button"
+                                                class="accion-mini eliminar-material-inventario"
+                                                data-id="{{ item.id }}"
+                                                data-descripcion="{{ item.descripcion }}"
+                                            >
+                                                🗑
+                                            </button>
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+
+                            {% endfor %}
+
+                        {% else %}
+
+                            <tr>
+
+                                <td
+                                    colspan="12"
+                                    class="tabla-vacia"
+                                >
+                                    Todavía no hay materiales controlados.
+                                </td>
+
+                            </tr>
+
+                        {% endif %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </section>
+
+</main>
+
+
+<div
+    class="modal-repuesto oculto"
+    id="modalFormulario"
+>
+
+    <div
+        class="fondo-modal-repuesto"
+        id="fondoFormulario"
+    ></div>
+
+
+    <section class="contenido-modal-repuesto modal-inventario">
+
+        <button
+            type="button"
+            class="cerrar-modal-repuesto"
+            id="cerrarFormulario"
+        >
+            ×
+        </button>
+
+
+        <span
+            class="eyebrow"
+            id="modalEtiqueta"
+        >
+            INVENTARIO
+        </span>
+
+
+        <h2 id="modalTitulo">
+            Nuevo
+        </h2>
+
+
+        <div id="contenidoFormulario"></div>
+
+
+        <div
+            id="errorFormulario"
+            class="mensaje error oculto"
+        ></div>
+
+
+        <div class="acciones-modal">
+
+            <button
+                type="button"
+                class="boton-secundario"
+                id="cancelarFormulario"
+            >
+                Cancelar
+            </button>
+
+            <button
+                type="button"
+                class="boton-principal"
+                id="guardarFormulario"
+            >
+                Guardar
+            </button>
+
+        </div>
+
+    </section>
+
+</div>
+
+
+<script>
+window.INVENTARIO_SECCIONES =
+    {{ secciones | tojson }};
+
+window.INVENTARIO_SUBSECCIONES =
+    {{ subsecciones | tojson }};
+</script>
+
+<script
+    src="{{ url_for('static', filename='js/inventario_repuestos.js') }}"
+></script>
+
+</body>
+</html>
+

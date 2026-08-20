@@ -2,155 +2,1860 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nueva solicitud | CMMS Industrial</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/repuestos.css') }}">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Nueva solicitud | CCM Mantenimiento
+    </title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --fondo: #050d17;
+            --fondo-secundario: #07111d;
+            --panel: #0b1624;
+            --panel-2: #0d1b2b;
+            --borde: #1d3249;
+            --borde-suave: #182a3d;
+            --texto: #f4f7fb;
+            --texto-secundario: #8fa5bb;
+            --texto-suave: #61788f;
+            --azul: #2598ff;
+            --azul-oscuro: #0c4373;
+            --morado: #7c42d8;
+            --morado-oscuro: #302051;
+            --verde: #31cf78;
+            --amarillo: #e9a91d;
+            --rojo: #ff4d5c;
+        }
+
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+        }
+
+        body {
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: var(--texto);
+            background:
+                radial-gradient(
+                    circle at 85% 10%,
+                    rgba(31, 90, 150, 0.10),
+                    transparent 30%
+                ),
+                var(--fondo);
+            font-family:
+                Inter,
+                Arial,
+                Helvetica,
+                sans-serif;
+        }
+
+        button,
+        input,
+        select,
+        textarea {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .app-repuestos {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 230px minmax(0, 1fr);
+        }
+
+        .sidebar-repuestos {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 3000;
+
+            width: 230px;
+            min-height: 100vh;
+
+            display: flex;
+            flex-direction: column;
+
+            padding: 22px 13px;
+
+            border-right: 1px solid #16283a;
+
+            background:
+                linear-gradient(
+                    180deg,
+                    #06101b 0%,
+                    #050d17 100%
+                );
+        }
+
+        .marca-repuestos {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+
+            margin-bottom: 30px;
+            padding: 0 9px;
+        }
+
+        .marca-icono {
+            display: grid;
+            place-items: center;
+
+            width: 40px;
+            height: 40px;
+
+            font-size: 27px;
+        }
+
+        .marca-texto strong {
+            display: block;
+
+            font-size: 22px;
+            letter-spacing: -0.5px;
+        }
+
+        .marca-texto span {
+            display: block;
+
+            margin-top: 1px;
+
+            color: #9aabbd;
+
+            font-size: 10px;
+        }
+
+        .menu-titulo {
+            display: block;
+
+            margin: 0 10px 10px;
+
+            color: #5fa8ef;
+
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.7px;
+        }
+
+        .menu-repuestos {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .menu-repuestos a {
+            min-height: 48px;
+
+            display: flex;
+            align-items: center;
+            gap: 11px;
+
+            padding: 0 12px;
+
+            border: 1px solid transparent;
+            border-radius: 8px;
+
+            color: #d8e1eb;
+
+            font-size: 12px;
+        }
+
+        .menu-repuestos a:hover {
+            border-color: #233b55;
+            background: #0d1b2b;
+        }
+
+        .menu-repuestos a.activo {
+            border-color: #4c2a84;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    #5324a6,
+                    #37206a
+                );
+
+            color: #ffffff;
+        }
+
+        .menu-icono {
+            width: 23px;
+
+            display: grid;
+            place-items: center;
+
+            font-size: 17px;
+        }
+
+        .sidebar-separador {
+            height: 1px;
+
+            margin: 16px 0;
+
+            background: #16283a;
+        }
+
+        .accesos-sidebar {
+            padding: 12px;
+
+            border: 1px solid #192d41;
+            border-radius: 10px;
+
+            background: #091522;
+        }
+
+        .accesos-sidebar h3 {
+            margin: 0 0 12px;
+
+            color: #9db0c3;
+
+            font-size: 9px;
+            font-weight: 600;
+        }
+
+        .acceso-rapido {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+
+            padding: 8px 0;
+
+            color: #d5e0e9;
+
+            font-size: 10px;
+        }
+
+        .acceso-rapido span:first-child {
+            width: 27px;
+            height: 27px;
+
+            display: grid;
+            place-items: center;
+
+            border-radius: 7px;
+
+            background: #10263a;
+        }
+
+        .volver-principal {
+            margin-top: auto;
+        }
+
+        .volver-principal a {
+            min-height: 55px;
+
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            padding: 10px 12px;
+
+            border: 1px solid #6140a6;
+            border-radius: 8px;
+
+            background: #120f24;
+        }
+
+        .volver-principal strong {
+            display: block;
+
+            font-size: 10px;
+        }
+
+        .volver-principal small {
+            display: block;
+
+            margin-top: 3px;
+
+            color: #889aaa;
+
+            font-size: 8px;
+        }
+
+        .contenido-repuestos {
+            grid-column: 2;
+
+            width: 100%;
+
+            padding: 20px 20px 35px;
+        }
+
+        .barra-superior {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+
+            margin-bottom: 19px;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            color: #8296aa;
+
+            font-size: 11px;
+        }
+
+        .breadcrumb span:first-child {
+            color: #a45cff;
+        }
+
+        .encabezado-pagina {
+            margin-bottom: 18px;
+        }
+
+        .encabezado-pagina h1 {
+            margin: 0 0 7px;
+
+            font-size: 25px;
+            letter-spacing: -0.5px;
+        }
+
+        .encabezado-pagina p {
+            margin: 0;
+
+            color: #9aabbd;
+
+            font-size: 11px;
+        }
+
+        .grid-principal {
+            display: grid;
+            grid-template-columns:
+                minmax(550px, 1.75fr)
+                minmax(350px, 0.9fr);
+
+            gap: 15px;
+
+            align-items: start;
+        }
+
+        .columna-principal,
+        .columna-derecha {
+            display: flex;
+            flex-direction: column;
+            gap: 13px;
+        }
+
+        .panel {
+            border: 1px solid var(--borde);
+            border-radius: 10px;
+
+            background:
+                linear-gradient(
+                    180deg,
+                    rgba(13, 27, 43, 0.98),
+                    rgba(8, 20, 32, 0.98)
+                );
+
+            box-shadow:
+                0 12px 30px
+                rgba(0, 0, 0, 0.16);
+        }
+
+        .panel-busqueda {
+            padding: 12px;
+        }
+
+        .busqueda-fila {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 9px;
+        }
+
+        .campo-busqueda {
+            min-height: 46px;
+
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            padding: 0 14px;
+
+            border: 1px solid #294059;
+            border-radius: 7px;
+
+            background: #0a1725;
+        }
+
+        .campo-busqueda span {
+            color: #d5e3ef;
+
+            font-size: 17px;
+        }
+
+        .campo-busqueda input {
+            width: 100%;
+
+            border: 0;
+            outline: 0;
+
+            color: #eef5fb;
+            background: transparent;
+
+            font-size: 11px;
+        }
+
+        .campo-busqueda input::placeholder {
+            color: #71869a;
+        }
+
+        .boton-filtro {
+            min-width: 103px;
+
+            border: 1px solid #294059;
+            border-radius: 7px;
+
+            color: #ffffff;
+            background: #0b1927;
+
+            font-size: 10px;
+        }
+
+        .busquedas-recientes {
+            min-height: 36px;
+
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            flex-wrap: wrap;
+
+            margin-top: 8px;
+        }
+
+        .busquedas-recientes > span {
+            color: #8396aa;
+
+            font-size: 9px;
+        }
+
+        .chip {
+            padding: 6px 9px;
+
+            border: 1px solid #24384d;
+            border-radius: 999px;
+
+            color: #c2ced9;
+            background: #0c1825;
+
+            font-size: 8px;
+        }
+
+        .resultados-panel {
+            overflow: hidden;
+        }
+
+        .panel-titulo {
+            min-height: 49px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+
+            padding: 0 14px;
+
+            border-bottom: 1px solid #1b3045;
+        }
+
+        .panel-titulo h2 {
+            margin: 0;
+
+            font-size: 14px;
+        }
+
+        .panel-titulo-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-titulo-icono {
+            color: #a55aff;
+        }
+
+        .total-resultados {
+            color: #a18db7;
+
+            font-size: 9px;
+        }
+
+        .encabezado-resultados {
+            min-height: 40px;
+
+            display: grid;
+            grid-template-columns:
+                90px
+                minmax(190px, 1fr)
+                65px
+                80px
+                105px
+                245px;
+
+            align-items: center;
+            gap: 8px;
+
+            padding: 0 13px;
+
+            border-bottom: 1px solid #1b3045;
+
+            color: #8fa4b8;
+
+            font-size: 8px;
+        }
+
+        .resultados-busqueda {
+            max-height: 570px;
+
+            overflow-y: auto;
+        }
+
+        .resultados-busqueda::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .resultados-busqueda::-webkit-scrollbar-thumb {
+            border-radius: 6px;
+            background: #29445e;
+        }
+
+        .resultado-material {
+            width: 100%;
+            min-height: 58px;
+
+            display: grid;
+            grid-template-columns:
+                90px
+                minmax(190px, 1fr)
+                65px
+                80px
+                105px
+                245px;
+
+            align-items: center;
+            gap: 8px;
+
+            padding: 8px 13px;
+
+            border: 0;
+            border-bottom: 1px solid #172a3d;
+
+            color: #eaf1f6;
+            background: transparent;
+
+            text-align: left;
+        }
+
+        .resultado-material:hover {
+            background: rgba(28, 54, 78, 0.35);
+        }
+
+        .resultado-codigo {
+            color: #dbe7f1;
+
+            font-size: 9px;
+        }
+
+        .resultado-descripcion {
+            overflow: hidden;
+
+            color: #f0f4f8;
+
+            font-size: 9px;
+            font-weight: 600;
+
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .resultado-dato {
+            color: #d1dce6;
+
+            font-size: 9px;
+        }
+
+        .acciones-resultado {
+            display: flex;
+            justify-content: flex-end;
+            gap: 6px;
+        }
+
+        .accion-pedido,
+        .accion-seccion {
+            min-height: 31px;
+
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+
+            padding: 0 9px;
+
+            border-radius: 5px;
+
+            font-size: 8px;
+            white-space: nowrap;
+        }
+
+        .accion-pedido {
+            border: 1px solid #6037a6;
+
+            color: #ffffff;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    #54239b,
+                    #38206d
+                );
+        }
+
+        .accion-seccion {
+            border: 1px solid #2574ad;
+
+            color: #69bfff;
+
+            background: #091828;
+        }
+
+        .resultado-cargando,
+        .sin-resultados,
+        .resultado-error {
+            padding: 25px;
+
+            color: #8ea2b5;
+
+            font-size: 10px;
+            text-align: center;
+        }
+
+        .crear-manual {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+
+            padding: 11px 13px;
+
+            border-top: 1px solid #1b3045;
+
+            color: #9db0c3;
+
+            font-size: 9px;
+        }
+
+        .oculto {
+            display: none !important;
+        }
+
+        .metricas {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 7px;
+        }
+
+        .metrica {
+            min-height: 123px;
+
+            padding: 13px 11px;
+
+            border: 1px solid #192f43;
+            border-radius: 9px;
+
+            background: #0b1826;
+        }
+
+        .metrica-icono {
+            width: 39px;
+            height: 39px;
+
+            display: grid;
+            place-items: center;
+
+            margin-bottom: 10px;
+
+            border-radius: 50%;
+
+            font-size: 19px;
+        }
+
+        .metrica:nth-child(1) .metrica-icono {
+            color: #b774ff;
+            background: #291744;
+        }
+
+        .metrica:nth-child(2) .metrica-icono {
+            color: #31cf78;
+            background: #0b3426;
+        }
+
+        .metrica:nth-child(3) .metrica-icono {
+            color: #f4b520;
+            background: #35280d;
+        }
+
+        .metrica:nth-child(4) .metrica-icono {
+            color: #4aa9ff;
+            background: #0b3152;
+        }
+
+        .metrica strong {
+            display: block;
+
+            font-size: 23px;
+        }
+
+        .metrica small {
+            display: block;
+
+            margin-top: 5px;
+
+            color: #a0afbc;
+
+            font-size: 8px;
+        }
+
+        .pedido-panel {
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .pedido-contenido {
+            padding: 0 12px 12px;
+        }
+
+        .tabla-contenedor {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .tabla-pedido {
+            width: 100%;
+
+            border-collapse: collapse;
+
+            font-size: 9px;
+        }
+
+        .tabla-pedido th {
+            padding: 10px 5px;
+
+            border-bottom: 1px solid #1b3045;
+
+            color: #8fa4b8;
+
+            font-size: 8px;
+            font-weight: 500;
+            text-align: left;
+        }
+
+        .tabla-pedido td {
+            padding: 11px 5px;
+
+            border-bottom: 1px solid #172a3d;
+
+            color: #e5edf4;
+        }
+
+        .tabla-vacia {
+            height: 85px;
+
+            color: #667f96 !important;
+
+            text-align: center;
+        }
+
+        .editar-cantidad,
+        .editar-valor {
+            width: 78px;
+
+            padding: 5px 6px;
+
+            border: 1px solid #263f57;
+            border-radius: 5px;
+
+            outline: none;
+
+            color: #ffffff;
+            background: #071421;
+
+            font-size: 8px;
+        }
+
+        .acciones-linea {
+            display: flex;
+            gap: 4px;
+        }
+
+        .boton-editar,
+        .boton-eliminar {
+            width: 27px;
+            height: 27px;
+
+            display: grid;
+            place-items: center;
+
+            border-radius: 5px;
+
+            background: transparent;
+        }
+
+        .boton-editar {
+            border: 1px solid #31577c;
+            color: #6bbdff;
+        }
+
+        .boton-eliminar {
+            border: 1px solid #6a2630;
+            color: #ff5363;
+        }
+
+        .resumen-pedido {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+
+            margin-top: 12px;
+        }
+
+        .resumen-pedido-item {
+            min-height: 70px;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+
+            padding: 10px 12px;
+
+            border: 1px solid #1d3449;
+            border-radius: 7px;
+
+            background: #091725;
+        }
+
+        .resumen-pedido-item span {
+            color: #8297aa;
+
+            font-size: 8px;
+        }
+
+        .resumen-pedido-item strong {
+            margin-top: 7px;
+
+            font-size: 17px;
+        }
+
+        #valorAproximado {
+            color: var(--verde);
+        }
+
+        .acciones-pedido {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+
+            margin-top: 10px;
+        }
+
+        .boton-principal,
+        .boton-secundario {
+            min-height: 40px;
+
+            border-radius: 6px;
+
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .boton-principal {
+            border: 1px solid #6735b1;
+
+            color: #ffffff;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    #58249f,
+                    #3c236c
+                );
+        }
+
+        .boton-principal:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .boton-secundario {
+            border: 1px solid #294059;
+
+            color: #dde7ef;
+
+            background: #0a1724;
+        }
+
+        .resultado-guardado {
+            margin-top: 9px;
+            padding: 10px;
+
+            border: 1px solid #286c49;
+            border-radius: 7px;
+
+            color: #9fe1bc;
+            background: #09251a;
+
+            font-size: 9px;
+        }
+
+        .alertas-panel {
+            padding-bottom: 8px;
+        }
+
+        .alerta-item {
+            min-height: 61px;
+
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            margin: 0 12px;
+
+            border-bottom: 1px solid #172a3d;
+        }
+
+        .alerta-icono {
+            width: 34px;
+            height: 34px;
+
+            display: grid;
+            place-items: center;
+
+            border-radius: 50%;
+
+            color: #ffb128;
+            background: #38270a;
+        }
+
+        .alerta-info strong {
+            display: block;
+
+            font-size: 10px;
+        }
+
+        .alerta-info span {
+            display: block;
+
+            margin-top: 4px;
+
+            color: #8397aa;
+
+            font-size: 8px;
+        }
+
+        .modal-repuesto {
+            position: fixed;
+            inset: 0;
+            z-index: 5000;
+
+            display: grid;
+            place-items: center;
+
+            padding: 15px;
+        }
+
+        .fondo-modal-repuesto {
+            position: absolute;
+            inset: 0;
+
+            background: rgba(0, 0, 0, 0.72);
+            backdrop-filter: blur(4px);
+        }
+
+        .contenido-modal-repuesto {
+            position: relative;
+            z-index: 2;
+
+            width: min(620px, 100%);
+            max-height: 90vh;
+
+            overflow-y: auto;
+
+            padding: 20px;
+
+            border: 1px solid #29445e;
+            border-radius: 12px;
+
+            background: #091522;
+
+            box-shadow:
+                0 25px 70px
+                rgba(0, 0, 0, 0.5);
+        }
+
+        .cerrar-modal-repuesto {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+
+            width: 32px;
+            height: 32px;
+
+            border: 1px solid #344c63;
+            border-radius: 7px;
+
+            color: #b9c8d5;
+            background: #0c1a29;
+
+            font-size: 18px;
+        }
+
+        .eyebrow {
+            color: #48aef7;
+
+            font-size: 8px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .contenido-modal-repuesto h2 {
+            margin: 8px 0 15px;
+
+            font-size: 19px;
+        }
+
+        .informacion-material {
+            margin-bottom: 14px;
+            padding: 12px;
+
+            border: 1px solid #213a51;
+            border-radius: 8px;
+
+            background: #0b1b2a;
+        }
+
+        .info-material-principal {
+            margin-bottom: 11px;
+        }
+
+        .info-etiqueta {
+            display: block;
+
+            margin-bottom: 5px;
+
+            color: #7990a4;
+
+            font-size: 7px;
+        }
+
+        .info-material-principal strong {
+            font-size: 12px;
+        }
+
+        .info-material-datos {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .info-material-datos div {
+            padding: 8px;
+
+            border: 1px solid #1e3449;
+            border-radius: 6px;
+
+            background: #081521;
+        }
+
+        .info-material-datos span {
+            display: block;
+
+            color: #71889e;
+
+            font-size: 7px;
+        }
+
+        .info-material-datos strong {
+            display: block;
+
+            margin-top: 4px;
+
+            font-size: 10px;
+        }
+
+        .rejilla-formulario {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .campo {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .campo-ancho {
+            grid-column: 1 / -1;
+        }
+
+        .campo label {
+            color: #99adbf;
+
+            font-size: 8px;
+        }
+
+        .campo input,
+        .campo select,
+        .campo textarea {
+            width: 100%;
+
+            padding: 9px 10px;
+
+            border: 1px solid #29445e;
+            border-radius: 6px;
+
+            outline: none;
+
+            color: #ffffff;
+            background: #071420;
+
+            font-size: 9px;
+        }
+
+        .campo textarea {
+            resize: vertical;
+        }
+
+        .campo small {
+            color: #70869a;
+
+            font-size: 7px;
+        }
+
+        .entrada-moneda {
+            display: flex;
+            align-items: center;
+
+            border: 1px solid #29445e;
+            border-radius: 6px;
+
+            background: #071420;
+        }
+
+        .entrada-moneda span {
+            padding-left: 10px;
+
+            color: #748b9f;
+        }
+
+        .entrada-moneda input {
+            border: 0;
+        }
+
+        .alerta-pedido {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+
+            margin-top: 12px;
+            padding: 10px;
+
+            border: 1px solid #805d22;
+            border-radius: 7px;
+
+            color: #edc76b;
+            background: #2a200d;
+
+            font-size: 8px;
+        }
+
+        .acciones-modal {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+
+            margin-top: 17px;
+        }
+
+        .acciones-modal button {
+            min-width: 120px;
+        }
+
+        @media (max-width: 1150px) {
+            .grid-principal {
+                grid-template-columns: 1fr;
+            }
+
+            .columna-derecha {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .metricas {
+                grid-column: 1 / -1;
+            }
+        }
+
+        @media (max-width: 820px) {
+            .app-repuestos {
+                display: block;
+            }
+
+            .sidebar-repuestos {
+                position: static;
+
+                width: 100%;
+                min-height: auto;
+            }
+
+            .menu-repuestos {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .contenido-repuestos {
+                padding: 14px;
+            }
+
+            .encabezado-resultados {
+                display: none;
+            }
+
+            .resultado-material {
+                grid-template-columns: 1fr 1fr;
+
+                gap: 7px;
+            }
+
+            .resultado-descripcion {
+                grid-column: 1 / -1;
+            }
+
+            .acciones-resultado {
+                grid-column: 1 / -1;
+
+                justify-content: flex-start;
+            }
+
+            .columna-derecha {
+                display: flex;
+            }
+        }
+    </style>
 </head>
+
 <body>
 
-{% include 'menu.html' %}
+<div class="app-repuestos">
 
-<main class="pagina-repuestos">
+    <aside class="sidebar-repuestos">
 
-    <header class="encabezado-repuestos">
-        <div>
-            <span class="eyebrow">REPUESTOS</span>
-            <h1>Nueva solicitud</h1>
-            <p>Busque un repuesto por código SAP o descripción y agréguelo al pedido.</p>
-        </div>
+        <div class="marca-repuestos">
 
-        <a
-            href="{{ url_for('repuestos.inicio') }}"
-            class="boton-secundario"
-        >
-            ← Volver
-        </a>
-    </header>
-
-    <section class="panel-busqueda">
-
-        <div class="campo-busqueda">
-            <span>🔎</span>
-
-            <input
-                type="text"
-                id="buscarMaterial"
-                placeholder="Buscar código SAP o descripción..."
-                autocomplete="off"
-            >
-        </div>
-
-        <div
-            id="resultadosBusqueda"
-            class="resultados-busqueda"
-        ></div>
-
-        <div
-            id="bloqueCrearManual"
-            class="crear-manual oculto"
-        >
-            <span>No se encontró el material en la base SAP.</span>
-
-            <button
-                type="button"
-                class="boton-secundario"
-                id="crearMaterialManual"
-            >
-                + Crear ítem manual
-            </button>
-        </div>
-
-    </section>
-
-    <section class="pedido-actual">
-
-        <div class="titulo-seccion">
-
-            <div>
-                <span class="eyebrow">PEDIDO</span>
-                <h2>Solicitud actual</h2>
+            <div class="marca-icono">
+                ⚙
             </div>
 
-            <div class="pedido-indicadores">
-
-                <span
-                    id="contadorMateriales"
-                    class="contador"
-                >
-                    0 materiales
-                </span>
-
-                <span
-                    id="valorAproximado"
-                    class="contador"
-                >
-                    $0
-                </span>
-
+            <div class="marca-texto">
+                <strong>CCM</strong>
+                <span>MANTENIMIENTO</span>
             </div>
 
         </div>
 
-        <div class="tabla-contenedor">
 
-            <table class="tabla-pedido">
+        <span class="menu-titulo">
+            MÓDULO REPUESTOS
+        </span>
 
-                <thead>
-                    <tr>
-                        <th>Código</th>
-                        <th>Producto o servicio</th>
-                        <th>UM</th>
-                        <th>Existencia</th>
-                        <th>Cantidad pedir</th>
-                        <th>Valor unitario</th>
-                        <th>Acción</th>
-                    </tr>
-                </thead>
 
-                <tbody id="tablaPedido">
-                    <tr>
-                        <td
-                            colspan="7"
-                            class="tabla-vacia"
+        <nav class="menu-repuestos">
+
+            <a
+                href="{{ url_for('repuestos.nueva_solicitud') }}"
+                class="activo"
+            >
+                <span class="menu-icono">
+                    🔎
+                </span>
+
+                Nueva solicitud
+            </a>
+
+
+            <a href="{{ url_for('repuestos.seguimiento') }}">
+
+                <span class="menu-icono">
+                    ◈
+                </span>
+
+                Seguimiento
+            </a>
+
+
+            <a href="{{ url_for('repuestos.recibidos_por_retirar') }}">
+
+                <span class="menu-icono">
+                    📦
+                </span>
+
+                Recibidos por retirar
+            </a>
+
+
+            <a href="{{ url_for('repuestos.inventario_tecnico') }}">
+
+                <span class="menu-icono">
+                    ▣
+                </span>
+
+                Inventario técnico
+            </a>
+
+
+            <a href="{{ url_for('repuestos.actualizar_sap') }}">
+
+                <span class="menu-icono">
+                    ♻
+                </span>
+
+                Actualizar base SAP
+            </a>
+
+        </nav>
+
+
+        <div class="sidebar-separador"></div>
+
+
+        <div class="accesos-sidebar">
+
+            <h3>
+                ACCESOS RÁPIDOS
+            </h3>
+
+
+            <a
+                href="{{ url_for('repuestos.inventario_tecnico') }}"
+                class="acceso-rapido"
+            >
+                <span>📁</span>
+                <span>Crear sección</span>
+            </a>
+
+
+            <a
+                href="{{ url_for('repuestos.inventario_tecnico') }}"
+                class="acceso-rapido"
+            >
+                <span>◇</span>
+                <span>Inventario técnico</span>
+            </a>
+
+
+            <a
+                href="{{ url_for('repuestos.actualizar_sap') }}"
+                class="acceso-rapido"
+            >
+                <span>↥</span>
+                <span>Actualizar base SAP</span>
+            </a>
+
+        </div>
+
+
+        <div class="volver-principal">
+
+            <a href="{{ url_for('inicio') }}">
+
+                <span style="font-size:20px;">
+                    ←
+                </span>
+
+                <div>
+                    <strong>
+                        Volver al menú principal
+                    </strong>
+
+                    <small>
+                        Regresar a todos los módulos
+                    </small>
+                </div>
+
+            </a>
+
+        </div>
+
+    </aside>
+
+
+    <main class="contenido-repuestos">
+
+        <div class="barra-superior">
+
+            <div class="breadcrumb">
+                <span>Repuestos</span>
+                <span>›</span>
+                <span>Nueva solicitud</span>
+            </div>
+
+        </div>
+
+
+        <header class="encabezado-pagina">
+
+            <h1>
+                Nueva solicitud
+            </h1>
+
+            <p>
+                Busca repuestos en SAP y agrégalos a un pedido
+                o a una sección del inventario técnico.
+            </p>
+
+        </header>
+
+
+        <div class="grid-principal">
+
+
+            <div class="columna-principal">
+
+
+                <section class="panel panel-busqueda">
+
+                    <div class="busqueda-fila">
+
+                        <div class="campo-busqueda">
+
+                            <span>⌕</span>
+
+                            <input
+                                type="text"
+                                id="buscarMaterial"
+                                placeholder="Buscar por código SAP o descripción del repuesto..."
+                                autocomplete="off"
+                            >
+
+                        </div>
+
+
+                        <button
+                            type="button"
+                            class="boton-filtro"
                         >
-                            No hay materiales agregados.
-                        </td>
-                    </tr>
-                </tbody>
+                            ☷ &nbsp; Filtros
+                        </button>
 
-            </table>
+                    </div>
+
+
+                    <div class="busquedas-recientes">
+
+                        <span>
+                            Búsquedas recientes:
+                        </span>
+
+                        <span class="chip">
+                            ANILLO
+                        </span>
+
+                        <span class="chip">
+                            PUNZON
+                        </span>
+
+                        <span class="chip">
+                            RODAMIENTO
+                        </span>
+
+                    </div>
+
+                </section>
+
+
+                <section class="panel resultados-panel">
+
+                    <div class="panel-titulo">
+
+                        <div class="panel-titulo-left">
+
+                            <span class="panel-titulo-icono">
+                                ▣
+                            </span>
+
+                            <h2>
+                                Resultados SAP
+                            </h2>
+
+                        </div>
+
+
+                        <span
+                            class="total-resultados"
+                            id="totalResultados"
+                        >
+                            Escriba para buscar
+                        </span>
+
+                    </div>
+
+
+                    <div class="encabezado-resultados">
+
+                        <span>
+                            Código SAP
+                        </span>
+
+                        <span>
+                            Descripción
+                        </span>
+
+                        <span>
+                            UM
+                        </span>
+
+                        <span>
+                            Stock SAP
+                        </span>
+
+                        <span>
+                            Valor unitario
+                        </span>
+
+                        <span></span>
+
+                    </div>
+
+
+                    <div
+                        id="resultadosBusqueda"
+                        class="resultados-busqueda"
+                    ></div>
+
+
+                    <div
+                        id="bloqueCrearManual"
+                        class="crear-manual oculto"
+                    >
+
+                        <span>
+                            El material no existe en SAP.
+                        </span>
+
+                        <button
+                            type="button"
+                            class="boton-secundario"
+                            id="crearMaterialManual"
+                        >
+                            + Crear ítem manual
+                        </button>
+
+                    </div>
+
+                </section>
+
+            </div>
+
+
+            <aside class="columna-derecha">
+
+
+                <section class="metricas">
+
+                    <article class="metrica">
+
+                        <div class="metrica-icono">
+                            📋
+                        </div>
+
+                        <strong>
+                            0
+                        </strong>
+
+                        <small>
+                            Solicitudes abiertas
+                        </small>
+
+                    </article>
+
+
+                    <article class="metrica">
+
+                        <div class="metrica-icono">
+                            🚚
+                        </div>
+
+                        <strong>
+                            0
+                        </strong>
+
+                        <small>
+                            Por retirar
+                        </small>
+
+                    </article>
+
+
+                    <article class="metrica">
+
+                        <div class="metrica-icono">
+                            ⚠
+                        </div>
+
+                        <strong>
+                            0
+                        </strong>
+
+                        <small>
+                            Bajo stock
+                        </small>
+
+                    </article>
+
+
+                    <article class="metrica">
+
+                        <div class="metrica-icono">
+                            ✓
+                        </div>
+
+                        <strong>
+                            —
+                        </strong>
+
+                        <small>
+                            Control
+                        </small>
+
+                    </article>
+
+                </section>
+
+
+                <section class="panel pedido-panel">
+
+                    <div class="panel-titulo">
+
+                        <div class="panel-titulo-left">
+
+                            <h2>
+                                Pedido actual
+                            </h2>
+
+                        </div>
+
+
+                        <span
+                            class="chip"
+                            id="contadorMateriales"
+                        >
+                            0 materiales
+                        </span>
+
+                    </div>
+
+
+                    <div class="pedido-contenido">
+
+
+                        <div class="tabla-contenedor">
+
+                            <table class="tabla-pedido">
+
+                                <thead>
+
+                                    <tr>
+
+                                        <th>
+                                            Código
+                                        </th>
+
+                                        <th>
+                                            Descripción
+                                        </th>
+
+                                        <th>
+                                            Cant.
+                                        </th>
+
+                                        <th>
+                                            Valor
+                                        </th>
+
+                                        <th></th>
+
+                                    </tr>
+
+                                </thead>
+
+
+                                <tbody id="tablaPedido">
+
+                                    <tr>
+
+                                        <td
+                                            colspan="5"
+                                            class="tabla-vacia"
+                                        >
+                                            Los repuestos agregados al pedido
+                                            aparecerán aquí.
+                                        </td>
+
+                                    </tr>
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+
+                        <div class="resumen-pedido">
+
+                            <div class="resumen-pedido-item">
+
+                                <span>
+                                    Total ítems
+                                </span>
+
+                                <strong id="cantidadItems">
+                                    0
+                                </strong>
+
+                            </div>
+
+
+                            <div class="resumen-pedido-item">
+
+                                <span>
+                                    Total pedido
+                                </span>
+
+                                <strong id="valorAproximado">
+                                    $0
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        <div
+                            id="resultadoGuardado"
+                            class="resultado-guardado oculto"
+                        ></div>
+
+
+                        <div class="acciones-pedido">
+
+                            <button
+                                type="button"
+                                class="boton-principal"
+                                id="generarPedido"
+                                disabled
+                            >
+                                ▣ &nbsp; Generar pedido
+                            </button>
+
+
+                            <button
+                                type="button"
+                                class="boton-secundario"
+                                id="limpiarPedido"
+                            >
+                                🗑 &nbsp; Limpiar pedido
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <section class="panel alertas-panel">
+
+                    <div class="panel-titulo">
+
+                        <h2>
+                            Alertas rápidas
+                        </h2>
+
+                    </div>
+
+
+                    <div class="alerta-item">
+
+                        <div class="alerta-icono">
+                            ⚠
+                        </div>
+
+                        <div class="alerta-info">
+
+                            <strong>
+                                Control de stock
+                            </strong>
+
+                            <span>
+                                Consulte Inventario técnico para
+                                revisar niveles mínimos.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="alerta-item">
+
+                        <div class="alerta-icono">
+                            ⚠
+                        </div>
+
+                        <div class="alerta-info">
+
+                            <strong>
+                                Pedidos pendientes
+                            </strong>
+
+                            <span>
+                                El sistema advertirá si intenta
+                                solicitar un material nuevamente.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+            </aside>
 
         </div>
 
-        <div
-            id="resultadoGuardado"
-            class="resultado-guardado oculto"
-        ></div>
+    </main>
 
-        <div class="acciones-pedido">
-
-            <button
-                type="button"
-                class="boton-secundario"
-                id="limpiarPedido"
-            >
-                Limpiar
-            </button>
-
-            <button
-                type="button"
-                class="boton-principal"
-                id="generarPedido"
-                disabled
-            >
-                Generar pedido
-            </button>
-
-        </div>
-
-    </section>
-
-</main>
+</div>
 
 
 <div
@@ -163,6 +1868,7 @@
         id="cerrarFondo"
     ></div>
 
+
     <section class="contenido-modal-repuesto">
 
         <button
@@ -173,11 +1879,16 @@
             ×
         </button>
 
-        <span class="eyebrow">AGREGAR AL PEDIDO</span>
+
+        <span class="eyebrow">
+            AGREGAR AL PEDIDO
+        </span>
+
 
         <h2 id="modalTitulo">
             Material
         </h2>
+
 
         <form id="formAgregarMaterial">
 
@@ -187,9 +1898,11 @@
                 value="SAP"
             >
 
+
             <section class="informacion-material">
 
                 <div class="info-material-principal">
+
                     <span class="info-etiqueta">
                         PRODUCTO O SERVICIO
                     </span>
@@ -197,28 +1910,54 @@
                     <strong id="descripcionVisual">
                         -
                     </strong>
+
                 </div>
+
 
                 <div class="info-material-datos">
 
                     <div>
-                        <span>Código SAP</span>
-                        <strong id="codigoVisual">-</strong>
+
+                        <span>
+                            Código SAP
+                        </span>
+
+                        <strong id="codigoVisual">
+                            -
+                        </strong>
+
                     </div>
 
-                    <div>
-                        <span>Existencia</span>
-                        <strong id="existenciaVisual">0</strong>
-                    </div>
 
                     <div>
-                        <span>Unidad</span>
-                        <strong id="unidadVisual">-</strong>
+
+                        <span>
+                            Existencia
+                        </span>
+
+                        <strong id="existenciaVisual">
+                            0
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            Unidad
+                        </span>
+
+                        <strong id="unidadVisual">
+                            -
+                        </strong>
+
                     </div>
 
                 </div>
 
             </section>
+
 
             <div
                 id="camposManual"
@@ -226,6 +1965,7 @@
             >
 
                 <div class="campo">
+
                     <label for="codigoSapManual">
                         Código SAP
                     </label>
@@ -235,9 +1975,12 @@
                         id="codigoSapManual"
                         value="CREAR"
                     >
+
                 </div>
 
+
                 <div class="campo">
+
                     <label for="unidadManual">
                         Unidad
                     </label>
@@ -247,9 +1990,12 @@
                         id="unidadManual"
                         placeholder="UND"
                     >
+
                 </div>
 
+
                 <div class="campo campo-ancho">
+
                     <label for="descripcionManual">
                         Producto o servicio
                     </label>
@@ -257,11 +2003,12 @@
                     <input
                         type="text"
                         id="descripcionManual"
-                        placeholder="Descripción del repuesto o servicio"
                     >
+
                 </div>
 
             </div>
+
 
             <input
                 type="hidden"
@@ -283,9 +2030,11 @@
                 id="existencia"
             >
 
+
             <div class="rejilla-formulario">
 
                 <div class="campo">
+
                     <label for="origen">
                         Origen
                     </label>
@@ -294,13 +2043,26 @@
                         id="origen"
                         required
                     >
-                        <option value="">Seleccione</option>
-                        <option value="NAL">Nacional</option>
-                        <option value="IMP">Importado</option>
+
+                        <option value="">
+                            Seleccione
+                        </option>
+
+                        <option value="NAL">
+                            Nacional
+                        </option>
+
+                        <option value="IMP">
+                            Importado
+                        </option>
+
                     </select>
+
                 </div>
 
+
                 <div class="campo">
+
                     <label for="consumoPromedio">
                         Consumo promedio / mes
                     </label>
@@ -312,9 +2074,12 @@
                         step="any"
                         required
                     >
+
                 </div>
 
+
                 <div class="campo">
+
                     <label for="tiempoEntrega">
                         Tiempo de entrega / meses
                     </label>
@@ -326,9 +2091,12 @@
                         step="any"
                         required
                     >
+
                 </div>
 
+
                 <div class="campo">
+
                     <label for="cantidadPedir">
                         Cantidad a pedir
                     </label>
@@ -340,15 +2108,21 @@
                         step="any"
                         required
                     >
+
                 </div>
 
+
                 <div class="campo campo-ancho">
+
                     <label for="valorUnitario">
                         Valor unitario sugerido
                     </label>
 
                     <div class="entrada-moneda">
-                        <span>$</span>
+
+                        <span>
+                            $
+                        </span>
 
                         <input
                             type="number"
@@ -357,14 +2131,18 @@
                             step="any"
                             required
                         >
+
                     </div>
 
                     <small>
-                        Puede modificar este valor antes de agregar el material.
+                        Puede modificar el valor antes de agregarlo.
                     </small>
+
                 </div>
 
+
                 <div class="campo campo-ancho">
+
                     <label for="observaciones">
                         Observaciones
                     </label>
@@ -373,14 +2151,17 @@
                         id="observaciones"
                         rows="3"
                     ></textarea>
+
                 </div>
 
             </div>
+
 
             <div
                 id="alertaPendiente"
                 class="alerta-pedido oculto"
             ></div>
+
 
             <div class="acciones-modal">
 
@@ -391,6 +2172,7 @@
                 >
                     Cancelar
                 </button>
+
 
                 <button
                     type="submit"
@@ -414,4 +2196,3 @@
 
 </body>
 </html>
-<script src="{{ url_for('static', filename='js/repuestos.js') }}"></script>

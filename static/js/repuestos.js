@@ -4,6 +4,7 @@ const buscarMaterial = document.getElementById("buscarMaterial");
 const resultadosBusqueda = document.getElementById("resultadosBusqueda");
 const bloqueCrearManual = document.getElementById("bloqueCrearManual");
 const crearMaterialManual = document.getElementById("crearMaterialManual");
+const totalResultados = document.getElementById("totalResultados");
 
 const modalRepuesto = document.getElementById("modalRepuesto");
 const cerrarModal = document.getElementById("cerrarModal");
@@ -35,9 +36,12 @@ const valorUnitario = document.getElementById("valorUnitario");
 const observaciones = document.getElementById("observaciones");
 
 const alertaPendiente = document.getElementById("alertaPendiente");
+
 const tablaPedido = document.getElementById("tablaPedido");
 const contadorMateriales = document.getElementById("contadorMateriales");
+const cantidadItems = document.getElementById("cantidadItems");
 const valorAproximado = document.getElementById("valorAproximado");
+
 const generarPedido = document.getElementById("generarPedido");
 const limpiarPedido = document.getElementById("limpiarPedido");
 const resultadoGuardado = document.getElementById("resultadoGuardado");
@@ -45,13 +49,18 @@ const resultadoGuardado = document.getElementById("resultadoGuardado");
 let pedido = [];
 let temporizadorBusqueda = null;
 let modoManual = false;
+let ultimoResultado = [];
+let materialParaSeccion = null;
+let catalogoSecciones = [];
+let catalogoSubsecciones = [];
 
 function escaparHtml(texto) {
     return String(texto ?? "")
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;");
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
 }
 
 function formatearNumero(valor) {
@@ -74,6 +83,24 @@ function formatearMoneda(valor) {
     );
 }
 
+function obtenerValorUnitario(material) {
+    let valor = Number(
+        material.valor_unitario || 0
+    );
+
+    if (
+        valor <= 0 &&
+        Number(material.existencia || 0) > 0 &&
+        Number(material.valor_inventario || 0) > 0
+    ) {
+        valor =
+            Number(material.valor_inventario) /
+            Number(material.existencia);
+    }
+
+    return valor;
+}
+
 async function buscar() {
     const texto = buscarMaterial.value.trim();
 
@@ -81,14 +108,25 @@ async function buscar() {
 
     if (texto.length < 2) {
         resultadosBusqueda.innerHTML = "";
+
+        if (totalResultados) {
+            totalResultados.textContent =
+                "Escriba al menos 2 caracteres";
+        }
+
         return;
     }
 
     resultadosBusqueda.innerHTML = `
         <div class="resultado-cargando">
-            Buscando...
+            Buscando materiales en SAP...
         </div>
     `;
+
+    if (totalResultados) {
+        totalResultados.textContent =
+            "Buscando...";
+    }
 
     try {
         const respuesta = await fetch(
@@ -103,7 +141,14 @@ async function buscar() {
 
         const materiales = await respuesta.json();
 
-        pintarResultados(materiales);
+        ultimoResultado =
+            Array.isArray(materiales)
+                ? materiales
+                : [];
+
+        pintarResultados(
+            ultimoResultado
+        );
 
     } catch (error) {
         resultadosBusqueda.innerHTML = `
@@ -111,20 +156,26 @@ async function buscar() {
                 ${escaparHtml(error.message)}
             </div>
         `;
+
+        if (totalResultados) {
+            totalResultados.textContent =
+                "Error";
+        }
     }
 }
 
 function pintarResultados(materiales) {
+    if (totalResultados) {
+        totalResultados.textContent =
+            materiales.length === 1
+                ? "1 resultado"
+                : `${materiales.length} resultados`;
+    }
+
     if (!materiales.length) {
         resultadosBusqueda.innerHTML = `
             <div class="sin-resultados">
-                <strong>
-                    No se encontraron materiales.
-                </strong>
-
-                <span>
-                    Puede crear el ítem manualmente.
-                </span>
+                No se encontraron materiales con ese código o descripción.
             </div>
         `;
 
@@ -138,68 +189,114 @@ function pintarResultados(materiales) {
     resultadosBusqueda.innerHTML =
         materiales
             .map(
-                material => `
-                    <button
-                        type="button"
-                        class="resultado-material"
-                        data-id="${material.id}"
-                    >
-                        <div>
-                            <strong>
+                (material, indice) => {
+                    const valor =
+                        obtenerValorUnitario(material);
+
+                    return `
+                        <div
+                            class="resultado-material"
+                            data-indice="${indice}"
+                        >
+
+                            <div class="resultado-codigo">
                                 ${escaparHtml(
                                     material.codigo_sap || "SIN CÓDIGO"
                                 )}
-                            </strong>
+                            </div>
 
-                            <span>
+                            <div class="resultado-descripcion">
                                 ${escaparHtml(
-                                    material.descripcion
+                                    material.descripcion || ""
                                 )}
-                            </span>
-                        </div>
+                            </div>
 
-                        <div class="resultado-datos">
-                            <span>
+                            <div class="resultado-dato">
                                 ${escaparHtml(
                                     material.unidad_medida || "-"
                                 )}
-                            </span>
+                            </div>
 
-                            <strong>
+                            <div class="resultado-dato">
                                 ${formatearNumero(
                                     material.existencia
                                 )}
-                            </strong>
+                            </div>
 
-                            <span>
-                                ${formatearMoneda(
-                                    material.valor_unitario
-                                )}
-                            </span>
+                            <div class="resultado-dato">
+                                ${formatearMoneda(valor)}
+                            </div>
+
+                            <div class="acciones-resultado">
+
+                                <button
+                                    type="button"
+                                    class="accion-pedido"
+                                    data-indice="${indice}"
+                                >
+                                    🛒 Agregar a pedido
+                                </button>
+
+                                <button
+                                    type="button"
+                                    class="accion-seccion"
+                                    data-indice="${indice}"
+                                >
+                                    📁 Agregar a sección
+                                </button>
+
+                            </div>
+
                         </div>
-                    </button>
-                `
+                    `;
+                }
             )
             .join("");
 
     document
-        .querySelectorAll(".resultado-material")
+        .querySelectorAll(".accion-pedido")
         .forEach(
             boton => {
                 boton.addEventListener(
                     "click",
                     function () {
-                        const id = Number(
-                            this.dataset.id
-                        );
+                        const indice =
+                            Number(
+                                this.dataset.indice
+                            );
 
-                        const material = materiales.find(
-                            item =>
-                                Number(item.id) === id
-                        );
+                        const material =
+                            ultimoResultado[indice];
 
                         if (material) {
-                            abrirMaterial(material);
+                            abrirMaterial(
+                                material
+                            );
+                        }
+                    }
+                );
+            }
+        );
+
+    document
+        .querySelectorAll(".accion-seccion")
+        .forEach(
+            boton => {
+                boton.addEventListener(
+                    "click",
+                    function () {
+                        const indice =
+                            Number(
+                                this.dataset.indice
+                            );
+
+                        const material =
+                            ultimoResultado[indice];
+
+                        if (material) {
+                            abrirAgregarSeccion(
+                                material
+                            );
                         }
                     }
                 );
@@ -246,26 +343,10 @@ async function abrirMaterial(material) {
     cantidadPedir.value = "";
     observaciones.value = "";
 
-    let valorSugerido =
-        Number(
-            material.valor_unitario || 0
-        );
-
-    if (
-        !valorSugerido &&
-        Number(material.existencia || 0) > 0
-    ) {
-        valorSugerido =
-            Number(
-                material.valor_inventario || 0
-            ) /
-            Number(
-                material.existencia || 1
-            );
-    }
-
     valorUnitario.value =
-        valorSugerido.toFixed(2);
+        obtenerValorUnitario(
+            material
+        ).toFixed(2);
 
     alertaPendiente.classList.add("oculto");
     alertaPendiente.innerHTML = "";
@@ -278,45 +359,42 @@ async function abrirMaterial(material) {
                 )}/pendiente`
             );
 
-            const datos =
-                await respuesta.json();
+            if (respuesta.ok) {
+                const datos =
+                    await respuesta.json();
 
-            if (
-                datos.pendientes &&
-                datos.pendientes.length
-            ) {
-                const totalPendiente =
-                    datos.pendientes.reduce(
-                        (acumulado, item) =>
-                            acumulado +
-                            Number(
-                                item.cantidad_pendiente || 0
-                            ),
-                        0
+                if (
+                    datos.pendientes &&
+                    datos.pendientes.length
+                ) {
+                    const totalPendiente =
+                        datos.pendientes.reduce(
+                            (acumulado, item) =>
+                                acumulado +
+                                Number(
+                                    item.cantidad_pendiente || 0
+                                ),
+                            0
+                        );
+
+                    alertaPendiente.innerHTML = `
+                        <strong>
+                            ⚠ Este material ya tiene un pedido pendiente
+                        </strong>
+
+                        <span>
+                            Pendiente por recibir:
+                            ${formatearNumero(totalPendiente)}
+                            ${escaparHtml(
+                                material.unidad_medida || ""
+                            )}
+                        </span>
+                    `;
+
+                    alertaPendiente.classList.remove(
+                        "oculto"
                     );
-
-                alertaPendiente.innerHTML = `
-                    <strong>
-                        ⚠ Material con pedido pendiente
-                    </strong>
-
-                    <span>
-                        Tiene
-                        ${formatearNumero(totalPendiente)}
-                        ${escaparHtml(
-                            material.unidad_medida || ""
-                        )}
-                        pendientes por recibir.
-                    </span>
-
-                    <span>
-                        Verifique antes de generar una nueva solicitud.
-                    </span>
-                `;
-
-                alertaPendiente.classList.remove(
-                    "oculto"
-                );
+                }
             }
 
         } catch (error) {
@@ -337,19 +415,29 @@ function abrirManual() {
     unidadMedida.value = "";
     existencia.value = 0;
 
-    codigoVisual.textContent = "CREAR";
-    descripcionVisual.textContent = "Ítem manual";
-    unidadVisual.textContent = "-";
-    existenciaVisual.textContent = "0";
+    codigoVisual.textContent =
+        "CREAR";
 
-    codigoSapManual.value = "CREAR";
+    descripcionVisual.textContent =
+        "Nuevo material";
+
+    unidadVisual.textContent =
+        "-";
+
+    existenciaVisual.textContent =
+        "0";
+
+    codigoSapManual.value =
+        "CREAR";
 
     descripcionManual.value =
         buscarMaterial.value.trim();
 
     unidadManual.value = "";
 
-    camposManual.classList.remove("oculto");
+    camposManual.classList.remove(
+        "oculto"
+    );
 
     origen.value = "";
     consumoPromedio.value = "";
@@ -358,19 +446,19 @@ function abrirManual() {
     valorUnitario.value = "";
     observaciones.value = "";
 
-    alertaPendiente.classList.add("oculto");
-    alertaPendiente.innerHTML = "";
+    alertaPendiente.classList.add(
+        "oculto"
+    );
 
-    modalRepuesto.classList.remove("oculto");
-
-    setTimeout(
-        () => descripcionManual.focus(),
-        80
+    modalRepuesto.classList.remove(
+        "oculto"
     );
 }
 
 function cerrarVentana() {
-    modalRepuesto.classList.add("oculto");
+    modalRepuesto.classList.add(
+        "oculto"
+    );
 }
 
 function agregarMaterialAlPedido(evento) {
@@ -384,28 +472,20 @@ function agregarMaterialAlPedido(evento) {
             unidadManual.value.trim();
 
         if (!descripcion) {
-            descripcionManual.setCustomValidity(
-                "Ingrese la descripción."
+            alert(
+                "Ingrese la descripción del material."
             );
-
-            descripcionManual.reportValidity();
 
             return;
         }
 
-        descripcionManual.setCustomValidity("");
-
         if (!unidad) {
-            unidadManual.setCustomValidity(
+            alert(
                 "Ingrese la unidad de medida."
             );
 
-            unidadManual.reportValidity();
-
             return;
         }
-
-        unidadManual.setCustomValidity("");
 
         codigoSap.value =
             codigoSapManual.value.trim() ||
@@ -417,7 +497,8 @@ function agregarMaterialAlPedido(evento) {
         unidadMedida.value =
             unidad;
 
-        existencia.value = 0;
+        existencia.value =
+            0;
     }
 
     if (!formAgregarMaterial.reportValidity()) {
@@ -427,17 +508,19 @@ function agregarMaterialAlPedido(evento) {
     const codigo =
         codigoSap.value.trim();
 
-    if (
-        codigo &&
-        codigo !== "CREAR" &&
-        pedido.some(
+    const existente =
+        pedido.find(
             item =>
-                item.codigo_sap === codigo
-        )
-    ) {
-        alert(
-            "Este código SAP ya está agregado al pedido actual. Puede modificar la cantidad directamente en la tabla."
+                item.codigo_sap === codigo &&
+                codigo !== "CREAR"
         );
+
+    if (existente) {
+        alert(
+            "Este material ya está agregado al pedido. Modifique la cantidad directamente en Pedido actual."
+        );
+
+        cerrarVentana();
 
         return;
     }
@@ -445,7 +528,7 @@ function agregarMaterialAlPedido(evento) {
     pedido.push(
         {
             codigo_sap:
-                codigo,
+                codigo || "CREAR",
 
             descripcion:
                 descripcionMaterial.value.trim(),
@@ -495,13 +578,6 @@ function agregarMaterialAlPedido(evento) {
 }
 
 function actualizarResumenPedido() {
-    contadorMateriales.textContent =
-        `${pedido.length} ${
-            pedido.length === 1
-                ? "material"
-                : "materiales"
-        }`;
-
     const total =
         pedido.reduce(
             (acumulado, item) =>
@@ -517,8 +593,24 @@ function actualizarResumenPedido() {
             0
         );
 
-    valorAproximado.textContent =
-        formatearMoneda(total);
+    if (contadorMateriales) {
+        contadorMateriales.textContent =
+            `${pedido.length} ${
+                pedido.length === 1
+                    ? "material"
+                    : "materiales"
+            }`;
+    }
+
+    if (cantidadItems) {
+        cantidadItems.textContent =
+            pedido.length;
+    }
+
+    if (valorAproximado) {
+        valorAproximado.textContent =
+            formatearMoneda(total);
+    }
 
     generarPedido.disabled =
         pedido.length === 0;
@@ -529,22 +621,15 @@ function pintarPedido() {
         tablaPedido.innerHTML = `
             <tr>
                 <td
-                    colspan="7"
+                    colspan="5"
                     class="tabla-vacia"
                 >
-                    No hay materiales agregados.
+                    Los repuestos agregados al pedido aparecerán aquí.
                 </td>
             </tr>
         `;
 
-        contadorMateriales.textContent =
-            "0 materiales";
-
-        valorAproximado.textContent =
-            "$0";
-
-        generarPedido.disabled =
-            true;
+        actualizarResumenPedido();
 
         return;
     }
@@ -554,6 +639,7 @@ function pintarPedido() {
             .map(
                 (item, indice) => `
                     <tr>
+
                         <td>
                             ${escaparHtml(
                                 item.codigo_sap || "CREAR"
@@ -563,18 +649,6 @@ function pintarPedido() {
                         <td>
                             ${escaparHtml(
                                 item.descripcion
-                            )}
-                        </td>
-
-                        <td>
-                            ${escaparHtml(
-                                item.unidad_medida
-                            )}
-                        </td>
-
-                        <td>
-                            ${formatearNumero(
-                                item.existencia
                             )}
                         </td>
 
@@ -605,12 +679,14 @@ function pintarPedido() {
                         </td>
 
                         <td>
+
                             <div class="acciones-linea">
+
                                 <button
                                     type="button"
                                     class="boton-editar"
                                     data-indice="${indice}"
-                                    title="Editar"
+                                    title="Editar información"
                                 >
                                     ✎
                                 </button>
@@ -623,8 +699,11 @@ function pintarPedido() {
                                 >
                                     ✕
                                 </button>
+
                             </div>
+
                         </td>
+
                     </tr>
                 `
             )
@@ -646,45 +725,16 @@ function pintarPedido() {
                             Number(this.value);
 
                         if (
-                            !Number.isFinite(valor) ||
-                            valor <= 0
+                            Number.isFinite(valor) &&
+                            valor > 0
                         ) {
-                            return;
+                            pedido[
+                                indice
+                            ].cantidad_pedir =
+                                valor;
+
+                            actualizarResumenPedido();
                         }
-
-                        pedido[indice].cantidad_pedir =
-                            valor;
-
-                        actualizarResumenPedido();
-                    }
-                );
-
-                campo.addEventListener(
-                    "change",
-                    function () {
-                        const indice =
-                            Number(
-                                this.dataset.indice
-                            );
-
-                        const valor =
-                            Number(this.value);
-
-                        if (
-                            !Number.isFinite(valor) ||
-                            valor <= 0
-                        ) {
-                            this.value =
-                                pedido[indice]
-                                    .cantidad_pedir;
-
-                            return;
-                        }
-
-                        pedido[indice].cantidad_pedir =
-                            valor;
-
-                        actualizarResumenPedido();
                     }
                 );
             }
@@ -706,63 +756,16 @@ function pintarPedido() {
                             Number(this.value);
 
                         if (
-                            !Number.isFinite(valor) ||
-                            valor < 0
+                            Number.isFinite(valor) &&
+                            valor >= 0
                         ) {
-                            return;
+                            pedido[
+                                indice
+                            ].valor_unitario =
+                                valor;
+
+                            actualizarResumenPedido();
                         }
-
-                        pedido[indice].valor_unitario =
-                            valor;
-
-                        actualizarResumenPedido();
-                    }
-                );
-
-                campo.addEventListener(
-                    "change",
-                    function () {
-                        const indice =
-                            Number(
-                                this.dataset.indice
-                            );
-
-                        const valor =
-                            Number(this.value);
-
-                        if (
-                            !Number.isFinite(valor) ||
-                            valor < 0
-                        ) {
-                            this.value =
-                                pedido[indice]
-                                    .valor_unitario;
-
-                            return;
-                        }
-
-                        pedido[indice].valor_unitario =
-                            valor;
-
-                        actualizarResumenPedido();
-                    }
-                );
-            }
-        );
-
-    document
-        .querySelectorAll(".boton-editar")
-        .forEach(
-            boton => {
-                boton.addEventListener(
-                    "click",
-                    function () {
-                        const indice =
-                            Number(
-                                this.dataset.indice
-                            );
-
-                        editarMaterialPedido(indice);
                     }
                 );
             }
@@ -791,10 +794,27 @@ function pintarPedido() {
             }
         );
 
+    document
+        .querySelectorAll(".boton-editar")
+        .forEach(
+            boton => {
+                boton.addEventListener(
+                    "click",
+                    function () {
+                        editarLineaPedido(
+                            Number(
+                                this.dataset.indice
+                            )
+                        );
+                    }
+                );
+            }
+        );
+
     actualizarResumenPedido();
 }
 
-function editarMaterialPedido(indice) {
+function editarLineaPedido(indice) {
     const item =
         pedido[indice];
 
@@ -802,149 +822,628 @@ function editarMaterialPedido(indice) {
         return;
     }
 
-    const nuevaCantidad =
-        prompt(
-            `Cantidad a pedir para:\n${item.descripcion}`,
-            item.cantidad_pedir
-        );
-
-    if (nuevaCantidad === null) {
-        return;
-    }
-
-    const cantidad =
-        Number(nuevaCantidad);
-
-    if (
-        !Number.isFinite(cantidad) ||
-        cantidad <= 0
-    ) {
-        alert(
-            "La cantidad debe ser mayor que cero."
-        );
-
-        return;
-    }
-
-    const nuevoConsumo =
+    const consumo =
         prompt(
             "Consumo promedio mensual:",
             item.consumo_promedio
         );
 
-    if (nuevoConsumo === null) {
-        return;
-    }
-
-    const consumo =
-        Number(nuevoConsumo);
-
-    if (
-        !Number.isFinite(consumo) ||
-        consumo < 0
-    ) {
-        alert(
-            "El consumo promedio no es válido."
-        );
-
-        return;
-    }
-
-    const nuevoTiempo =
-        prompt(
-            "Tiempo de entrega:",
-            item.tiempo_entrega
-        );
-
-    if (nuevoTiempo === null) {
+    if (consumo === null) {
         return;
     }
 
     const tiempo =
-        Number(nuevoTiempo);
-
-    if (
-        !Number.isFinite(tiempo) ||
-        tiempo < 0
-    ) {
-        alert(
-            "El tiempo de entrega no es válido."
-        );
-
-        return;
-    }
-
-    const nuevoValor =
         prompt(
-            "Valor unitario:",
-            item.valor_unitario
+            "Tiempo de entrega en meses:",
+            item.tiempo_entrega
         );
 
-    if (nuevoValor === null) {
+    if (tiempo === null) {
         return;
     }
 
-    const valor =
-        Number(nuevoValor);
-
-    if (
-        !Number.isFinite(valor) ||
-        valor < 0
-    ) {
-        alert(
-            "El valor unitario no es válido."
-        );
-
-        return;
-    }
-
-    const nuevaObservacion =
+    const observacion =
         prompt(
             "Observaciones:",
             item.observaciones || ""
         );
 
-    if (nuevaObservacion === null) {
+    if (observacion === null) {
         return;
     }
 
-    item.cantidad_pedir =
-        cantidad;
-
     item.consumo_promedio =
-        consumo;
+        Number(consumo || 0);
 
     item.tiempo_entrega =
-        tiempo;
-
-    item.valor_unitario =
-        valor;
+        Number(tiempo || 0);
 
     item.observaciones =
-        nuevaObservacion.trim();
+        observacion.trim();
 
     pintarPedido();
 }
 
-async function generarSolicitud() {
-    if (!pedido.length) {
+function crearModalSeccion() {
+    if (
+        document.getElementById(
+            "modalAgregarSeccion"
+        )
+    ) {
         return;
     }
 
-    const cantidadesInvalidas =
-        pedido.some(
-            item =>
-                !Number.isFinite(
-                    Number(item.cantidad_pedir)
-                ) ||
-                Number(item.cantidad_pedir) <= 0
+    const modal =
+        document.createElement("div");
+
+    modal.id =
+        "modalAgregarSeccion";
+
+    modal.className =
+        "modal-repuesto oculto";
+
+    modal.innerHTML = `
+        <div
+            class="fondo-modal-repuesto"
+            id="fondoAgregarSeccion"
+        ></div>
+
+        <section class="contenido-modal-repuesto">
+
+            <button
+                type="button"
+                class="cerrar-modal-repuesto"
+                id="cerrarAgregarSeccion"
+            >
+                ×
+            </button>
+
+            <span class="eyebrow">
+                INVENTARIO TÉCNICO
+            </span>
+
+            <h2>
+                Agregar material a sección
+            </h2>
+
+            <section class="informacion-material">
+
+                <div class="info-material-principal">
+
+                    <span class="info-etiqueta">
+                        MATERIAL
+                    </span>
+
+                    <strong id="seccionMaterialDescripcion">
+                        -
+                    </strong>
+
+                </div>
+
+                <div class="info-material-datos">
+
+                    <div>
+                        <span>Código SAP</span>
+                        <strong id="seccionMaterialCodigo">-</strong>
+                    </div>
+
+                    <div>
+                        <span>Existencia SAP</span>
+                        <strong id="seccionMaterialStock">0</strong>
+                    </div>
+
+                    <div>
+                        <span>Unidad</span>
+                        <strong id="seccionMaterialUnidad">-</strong>
+                    </div>
+
+                </div>
+
+            </section>
+
+            <div class="rejilla-formulario">
+
+                <div class="campo">
+
+                    <label>
+                        Sección
+                    </label>
+
+                    <select id="selectorSeccion">
+                        <option value="">
+                            Seleccione
+                        </option>
+                    </select>
+
+                </div>
+
+                <div class="campo">
+
+                    <label>
+                        Subsección
+                    </label>
+
+                    <select id="selectorSubseccion">
+                        <option value="">
+                            Sin subsección
+                        </option>
+                    </select>
+
+                </div>
+
+                <div class="campo">
+
+                    <label>
+                        Stock mínimo
+                    </label>
+
+                    <input
+                        type="number"
+                        id="stockMinimoSeccion"
+                        min="0"
+                        step="any"
+                        value="0"
+                    >
+
+                </div>
+
+                <div class="campo">
+
+                    <label>
+                        Stock objetivo
+                    </label>
+
+                    <input
+                        type="number"
+                        id="stockObjetivoSeccion"
+                        min="0"
+                        step="any"
+                        value="0"
+                    >
+
+                </div>
+
+                <div class="campo campo-ancho">
+
+                    <label>
+                        Observaciones
+                    </label>
+
+                    <textarea
+                        id="observacionesSeccion"
+                        rows="3"
+                    ></textarea>
+
+                </div>
+
+            </div>
+
+            <div
+                id="errorAgregarSeccion"
+                class="alerta-pedido oculto"
+            ></div>
+
+            <div class="acciones-modal">
+
+                <button
+                    type="button"
+                    class="boton-secundario"
+                    id="cancelarAgregarSeccion"
+                >
+                    Cancelar
+                </button>
+
+                <button
+                    type="button"
+                    class="boton-principal"
+                    id="guardarAgregarSeccion"
+                >
+                    Agregar a sección
+                </button>
+
+            </div>
+
+        </section>
+    `;
+
+    document.body.appendChild(
+        modal
+    );
+
+    document
+        .getElementById(
+            "cerrarAgregarSeccion"
+        )
+        .addEventListener(
+            "click",
+            cerrarModalSeccion
         );
 
-    if (cantidadesInvalidas) {
+    document
+        .getElementById(
+            "cancelarAgregarSeccion"
+        )
+        .addEventListener(
+            "click",
+            cerrarModalSeccion
+        );
+
+    document
+        .getElementById(
+            "fondoAgregarSeccion"
+        )
+        .addEventListener(
+            "click",
+            cerrarModalSeccion
+        );
+
+    document
+        .getElementById(
+            "selectorSeccion"
+        )
+        .addEventListener(
+            "change",
+            actualizarSubsecciones
+        );
+
+    document
+        .getElementById(
+            "guardarAgregarSeccion"
+        )
+        .addEventListener(
+            "click",
+            guardarMaterialEnSeccion
+        );
+}
+
+async function cargarCatalogoInventario() {
+    const respuesta =
+        await fetch(
+            "/repuestos/api/inventario/catalogo"
+        );
+
+    if (!respuesta.ok) {
+        throw new Error(
+            "No fue posible consultar las secciones del inventario técnico."
+        );
+    }
+
+    const datos =
+        await respuesta.json();
+
+    if (!datos.ok) {
+        throw new Error(
+            datos.error ||
+            "No fue posible consultar el inventario."
+        );
+    }
+
+    catalogoSecciones =
+        datos.secciones || [];
+
+    catalogoSubsecciones =
+        datos.subsecciones || [];
+}
+
+async function abrirAgregarSeccion(material) {
+    materialParaSeccion =
+        material;
+
+    crearModalSeccion();
+
+    const modal =
+        document.getElementById(
+            "modalAgregarSeccion"
+        );
+
+    const error =
+        document.getElementById(
+            "errorAgregarSeccion"
+        );
+
+    error.classList.add(
+        "oculto"
+    );
+
+    error.innerHTML = "";
+
+    document.getElementById(
+        "seccionMaterialDescripcion"
+    ).textContent =
+        material.descripcion || "-";
+
+    document.getElementById(
+        "seccionMaterialCodigo"
+    ).textContent =
+        material.codigo_sap || "CREAR";
+
+    document.getElementById(
+        "seccionMaterialStock"
+    ).textContent =
+        formatearNumero(
+            material.existencia
+        );
+
+    document.getElementById(
+        "seccionMaterialUnidad"
+    ).textContent =
+        material.unidad_medida || "-";
+
+    try {
+        await cargarCatalogoInventario();
+
+        const selector =
+            document.getElementById(
+                "selectorSeccion"
+            );
+
+        selector.innerHTML = `
+            <option value="">
+                Seleccione
+            </option>
+
+            ${catalogoSecciones
+                .filter(
+                    seccion =>
+                        Number(
+                            seccion.activo
+                        ) === 1
+                )
+                .map(
+                    seccion => `
+                        <option value="${seccion.id}">
+                            ${escaparHtml(
+                                seccion.nombre
+                            )}
+                        </option>
+                    `
+                )
+                .join("")}
+        `;
+
+        document.getElementById(
+            "selectorSubseccion"
+        ).innerHTML = `
+            <option value="">
+                Sin subsección
+            </option>
+        `;
+
+        modal.classList.remove(
+            "oculto"
+        );
+
+    } catch (errorCarga) {
         alert(
-            "Revise las cantidades a pedir antes de generar el pedido."
+            errorCarga.message
+        );
+    }
+}
+
+function actualizarSubsecciones() {
+    const seccionId =
+        Number(
+            document.getElementById(
+                "selectorSeccion"
+            ).value
         );
 
+    const selector =
+        document.getElementById(
+            "selectorSubseccion"
+        );
+
+    selector.innerHTML = `
+        <option value="">
+            Sin subsección
+        </option>
+
+        ${catalogoSubsecciones
+            .filter(
+                sub =>
+                    Number(sub.activo) === 1 &&
+                    Number(sub.seccion_id) === seccionId
+            )
+            .map(
+                sub => `
+                    <option value="${sub.id}">
+                        ${escaparHtml(
+                            sub.nombre
+                        )}
+                    </option>
+                `
+            )
+            .join("")}
+    `;
+}
+
+function cerrarModalSeccion() {
+    const modal =
+        document.getElementById(
+            "modalAgregarSeccion"
+        );
+
+    if (modal) {
+        modal.classList.add(
+            "oculto"
+        );
+    }
+
+    materialParaSeccion =
+        null;
+}
+
+async function guardarMaterialEnSeccion() {
+    if (!materialParaSeccion) {
+        return;
+    }
+
+    const error =
+        document.getElementById(
+            "errorAgregarSeccion"
+        );
+
+    error.classList.add(
+        "oculto"
+    );
+
+    const seccionId =
+        document.getElementById(
+            "selectorSeccion"
+        ).value;
+
+    const subseccionId =
+        document.getElementById(
+            "selectorSubseccion"
+        ).value;
+
+    const stockMinimo =
+        Number(
+            document.getElementById(
+                "stockMinimoSeccion"
+            ).value || 0
+        );
+
+    const stockObjetivo =
+        Number(
+            document.getElementById(
+                "stockObjetivoSeccion"
+            ).value || 0
+        );
+
+    if (!seccionId) {
+        error.innerHTML =
+            "Seleccione una sección.";
+
+        error.classList.remove(
+            "oculto"
+        );
+
+        return;
+    }
+
+    if (stockMinimo < 0) {
+        error.innerHTML =
+            "El stock mínimo no puede ser negativo.";
+
+        error.classList.remove(
+            "oculto"
+        );
+
+        return;
+    }
+
+    if (
+        stockObjetivo <
+        stockMinimo
+    ) {
+        error.innerHTML =
+            "El stock objetivo debe ser igual o mayor al stock mínimo.";
+
+        error.classList.remove(
+            "oculto"
+        );
+
+        return;
+    }
+
+    const boton =
+        document.getElementById(
+            "guardarAgregarSeccion"
+        );
+
+    boton.disabled = true;
+    boton.textContent =
+        "Guardando...";
+
+    try {
+        const respuesta =
+            await fetch(
+                "/repuestos/api/inventario/materiales",
+                {
+                    method:
+                        "POST",
+
+                    headers:
+                        {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                    body:
+                        JSON.stringify(
+                            {
+                                codigo_sap:
+                                    materialParaSeccion.codigo_sap,
+
+                                descripcion:
+                                    materialParaSeccion.descripcion,
+
+                                unidad_medida:
+                                    materialParaSeccion.unidad_medida,
+
+                                seccion_id:
+                                    seccionId,
+
+                                subseccion_id:
+                                    subseccionId,
+
+                                stock_minimo:
+                                    stockMinimo,
+
+                                stock_objetivo:
+                                    stockObjetivo,
+
+                                observaciones:
+                                    document.getElementById(
+                                        "observacionesSeccion"
+                                    ).value.trim(),
+
+                                origen_dato:
+                                    "SAP"
+                            }
+                        )
+                }
+            );
+
+        const datos =
+            await respuesta.json();
+
+        if (
+            !respuesta.ok ||
+            !datos.ok
+        ) {
+            throw new Error(
+                datos.error ||
+                "No fue posible agregar el material a la sección."
+            );
+        }
+
+        cerrarModalSeccion();
+
+        alert(
+            "Material agregado correctamente al Inventario técnico."
+        );
+
+    } catch (errorGuardar) {
+        error.innerHTML =
+            escaparHtml(
+                errorGuardar.message
+            );
+
+        error.classList.remove(
+            "oculto"
+        );
+
+    } finally {
+        boton.disabled = false;
+        boton.textContent =
+            "Agregar a sección";
+    }
+}
+
+async function generarSolicitud() {
+    if (!pedido.length) {
         return;
     }
 
@@ -958,38 +1457,35 @@ async function generarSolicitud() {
         "oculto"
     );
 
-    resultadoGuardado.innerHTML = "";
+    resultadoGuardado.innerHTML =
+        "";
 
     try {
-        const respuesta = await fetch(
-            "/repuestos/api/solicitudes",
-            {
-                method: "POST",
+        const respuesta =
+            await fetch(
+                "/repuestos/api/solicitudes",
+                {
+                    method:
+                        "POST",
 
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
+                    headers:
+                        {
+                            "Content-Type":
+                                "application/json"
+                        },
 
-                body: JSON.stringify(
-                    {
-                        items: pedido
-                    }
-                )
-            }
-        );
-
-        let datos;
-
-        try {
-            datos =
-                await respuesta.json();
-
-        } catch (error) {
-            throw new Error(
-                "El servidor no devolvió una respuesta válida."
+                    body:
+                        JSON.stringify(
+                            {
+                                items:
+                                    pedido
+                            }
+                        )
+                }
             );
-        }
+
+        const datos =
+            await respuesta.json();
 
         if (
             !respuesta.ok ||
@@ -1009,37 +1505,27 @@ async function generarSolicitud() {
                 ✓ Pedido generado correctamente
             </strong>
 
-            <span>
+            <div style="margin-top:5px;">
                 ${escaparHtml(
-                    solicitud.codigo_solicitud
+                    solicitud.codigo_solicitud || ""
                 )}
-                · Semana
-                ${solicitud.semana}
-                ·
-                ${solicitud.cantidad_items}
-                ítems
-                ·
-                ${formatearMoneda(
-                    solicitud.valor_estimado
-                )}
-            </span>
+            </div>
         `;
 
         resultadoGuardado.classList.remove(
             "oculto"
         );
 
-        if (solicitud.archivo_url) {
+        if (
+            solicitud.archivo_url
+        ) {
             const enlace =
-                document.createElement("a");
+                document.createElement(
+                    "a"
+                );
 
             enlace.href =
                 solicitud.archivo_url;
-
-            if (solicitud.archivo) {
-                enlace.download =
-                    solicitud.archivo;
-            }
 
             enlace.style.display =
                 "none";
@@ -1057,25 +1543,17 @@ async function generarSolicitud() {
 
         pintarPedido();
 
-        buscarMaterial.value = "";
-
-        resultadosBusqueda.innerHTML = "";
-
-        bloqueCrearManual.classList.add(
-            "oculto"
-        );
-
     } catch (error) {
         resultadoGuardado.innerHTML = `
             <strong>
                 ✕ No fue posible generar el pedido
             </strong>
 
-            <span>
+            <div style="margin-top:5px;">
                 ${escaparHtml(
                     error.message
                 )}
-            </span>
+            </div>
         `;
 
         resultadoGuardado.classList.remove(
@@ -1084,7 +1562,7 @@ async function generarSolicitud() {
 
     } finally {
         generarPedido.textContent =
-            "Generar pedido";
+            "▣ Generar pedido";
 
         generarPedido.disabled =
             pedido.length === 0;
@@ -1102,7 +1580,7 @@ if (buscarMaterial) {
             temporizadorBusqueda =
                 setTimeout(
                     buscar,
-                    280
+                    250
                 );
         }
     );
@@ -1151,12 +1629,11 @@ if (limpiarPedido) {
                 return;
             }
 
-            const confirmar =
-                confirm(
-                    "¿Desea eliminar todos los materiales del pedido?"
-                );
-
-            if (!confirmar) {
+            if (
+                !confirm(
+                    "¿Desea limpiar todo el pedido actual?"
+                )
+            ) {
                 return;
             }
 
@@ -1173,3 +1650,5 @@ if (generarPedido) {
         generarSolicitud
     );
 }
+
+pintarPedido();

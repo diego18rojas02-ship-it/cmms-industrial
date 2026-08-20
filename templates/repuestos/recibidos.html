@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Recibidos por retirar | CMMS Industrial
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/repuestos.css') }}"
+    >
+</head>
+
+<body>
+
+{% include 'menu.html' %}
+
+<main class="pagina-repuestos">
+
+    <header class="encabezado-repuestos">
+
+        <div>
+            <span class="eyebrow">
+                REPUESTOS
+            </span>
+
+            <h1>
+                Recibidos por retirar
+            </h1>
+
+            <p>
+                Materiales confirmados como recibidos que todavía
+                tienen cantidades pendientes por retirar del almacén.
+            </p>
+        </div>
+
+        <div class="acciones-encabezado-retiros">
+
+            <a
+                href="{{ url_for('repuestos.exportar_recibidos') }}"
+                class="boton-secundario"
+            >
+                Descargar listado
+            </a>
+
+            <a
+                href="{{ url_for('repuestos.inicio') }}"
+                class="boton-secundario"
+            >
+                ← Volver
+            </a>
+
+        </div>
+
+    </header>
+
+
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+
+        {% for categoria, mensaje in mensajes %}
+
+            <div class="mensaje {{ categoria }}">
+                {{ mensaje }}
+            </div>
+
+        {% endfor %}
+
+    {% endwith %}
+
+
+    <section class="resumen-repuestos">
+
+        <article class="tarjeta-resumen">
+
+            <span class="icono-resumen">
+                📦
+            </span>
+
+            <div>
+
+                <small>
+                    Materiales pendientes
+                </small>
+
+                <strong>
+                    {{ resumen.materiales }}
+                </strong>
+
+            </div>
+
+        </article>
+
+
+        <article class="tarjeta-resumen">
+
+            <span class="icono-resumen">
+                📤
+            </span>
+
+            <div>
+
+                <small>
+                    Unidades por retirar
+                </small>
+
+                <strong>
+                    {{ "{:,.2f}".format(resumen.unidades).rstrip("0").rstrip(".") }}
+                </strong>
+
+            </div>
+
+        </article>
+
+    </section>
+
+
+    <section class="panel-seguimiento">
+
+        <div class="titulo-seccion">
+
+            <div>
+
+                <span class="eyebrow">
+                    ALMACÉN
+                </span>
+
+                <h2>
+                    Pendientes de retiro
+                </h2>
+
+            </div>
+
+
+            <div class="filtros-seguimiento">
+
+                <input
+                    type="text"
+                    id="filtroRecibidos"
+                    placeholder="Buscar código, solicitud o descripción..."
+                >
+
+            </div>
+
+        </div>
+
+
+        <div class="tabla-contenedor">
+
+            <table class="tabla-pedido tabla-seguimiento">
+
+                <thead>
+
+                    <tr>
+                        <th>Solicitud</th>
+                        <th>Código</th>
+                        <th>Material</th>
+                        <th>UM</th>
+                        <th>Pedido</th>
+                        <th>Recibido</th>
+                        <th>Retirado</th>
+                        <th>Pendiente retiro</th>
+                        <th>Fecha recibido</th>
+                        <th>Acción</th>
+                    </tr>
+
+                </thead>
+
+
+                <tbody id="tablaRecibidos">
+
+                    {% if registros %}
+
+                        {% for item in registros %}
+
+                            <tr
+                                data-busqueda="{{ (
+                                    (item.codigo_solicitud or '') ~ ' ' ~
+                                    (item.codigo_sap or '') ~ ' ' ~
+                                    (item.descripcion or '')
+                                ) | lower }}"
+                            >
+
+                                <td>
+
+                                    <strong>
+                                        {{ item.codigo_solicitud }}
+                                    </strong>
+
+                                    <small class="dato-secundario">
+                                        Semana {{ item.semana }}
+                                    </small>
+
+                                </td>
+
+
+                                <td>
+                                    {{ item.codigo_sap or 'CREAR' }}
+                                </td>
+
+
+                                <td>
+                                    {{ item.descripcion }}
+                                </td>
+
+
+                                <td>
+                                    {{ item.unidad_medida }}
+                                </td>
+
+
+                                <td>
+                                    {{ "{:,.2f}".format(item.cantidad_pedir).rstrip("0").rstrip(".") }}
+                                </td>
+
+
+                                <td>
+                                    {{ "{:,.2f}".format(item.cantidad_recibida).rstrip("0").rstrip(".") }}
+                                </td>
+
+
+                                <td>
+                                    {{ "{:,.2f}".format(item.cantidad_retirada).rstrip("0").rstrip(".") }}
+                                </td>
+
+
+                                <td>
+
+                                    <strong>
+                                        {{ "{:,.2f}".format(item.cantidad_pendiente_retiro).rstrip("0").rstrip(".") }}
+                                    </strong>
+
+                                </td>
+
+
+                                <td>
+
+                                    {% if item.fecha_recibido %}
+
+                                        {{ item.fecha_recibido[:10] }}
+
+                                    {% else %}
+
+                                        -
+
+                                    {% endif %}
+
+                                </td>
+
+
+                                <td>
+
+                                    <button
+                                        type="button"
+                                        class="boton-confirmar-recepcion boton-confirmar-retiro"
+                                        data-detalle-id="{{ item.detalle_id }}"
+                                        data-pendiente="{{ item.cantidad_pendiente_retiro }}"
+                                        data-unidad="{{ item.unidad_medida }}"
+                                        data-descripcion="{{ item.descripcion }}"
+                                    >
+                                        Confirmar retiro
+                                    </button>
+
+                                </td>
+
+                            </tr>
+
+                        {% endfor %}
+
+                    {% else %}
+
+                        <tr>
+
+                            <td
+                                colspan="10"
+                                class="tabla-vacia"
+                            >
+                                No hay materiales pendientes por retirar.
+                            </td>
+
+                        </tr>
+
+                    {% endif %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<div
+    class="modal-repuesto oculto"
+    id="modalRetiro"
+>
+
+    <div
+        class="fondo-modal-repuesto"
+        id="fondoRetiro"
+    ></div>
+
+
+    <section class="contenido-modal-repuesto modal-recepcion">
+
+        <button
+            type="button"
+            class="cerrar-modal-repuesto"
+            id="cerrarRetiro"
+        >
+            ×
+        </button>
+
+
+        <span class="eyebrow">
+            CONFIRMAR RETIRO
+        </span>
+
+
+        <h2 id="tituloRetiro">
+            Retiro de almacén
+        </h2>
+
+
+        <p class="texto-recepcion">
+            Registre únicamente la cantidad que efectivamente
+            está retirando del almacén.
+        </p>
+
+
+        <div class="campo">
+
+            <label for="cantidadRetirada">
+                Cantidad a retirar
+            </label>
+
+            <input
+                type="number"
+                id="cantidadRetirada"
+                min="0.01"
+                step="any"
+            >
+
+            <small id="detallePendienteRetiro"></small>
+
+        </div>
+
+
+        <div class="campo campo-retiro-observacion">
+
+            <label for="observacionRetiro">
+                Observación
+            </label>
+
+            <textarea
+                id="observacionRetiro"
+                rows="3"
+                placeholder="Opcional"
+            ></textarea>
+
+        </div>
+
+
+        <div
+            id="errorRetiro"
+            class="mensaje error oculto"
+        ></div>
+
+
+        <div class="acciones-modal">
+
+            <button
+                type="button"
+                class="boton-secundario"
+                id="cancelarRetiro"
+            >
+                Cancelar
+            </button>
+
+            <button
+                type="button"
+                class="boton-principal"
+                id="confirmarRetiro"
+            >
+                Confirmar retiro
+            </button>
+
+        </div>
+
+    </section>
+
+</div>
+
+
+<script>
+"use strict";
+
+const filtroRecibidos =
+    document.getElementById(
+        "filtroRecibidos"
+    );
+
+const filasRecibidos =
+    Array.from(
+        document.querySelectorAll(
+            "#tablaRecibidos tr[data-busqueda]"
+        )
+    );
+
+const modalRetiro =
+    document.getElementById(
+        "modalRetiro"
+    );
+
+const fondoRetiro =
+    document.getElementById(
+        "fondoRetiro"
+    );
+
+const cerrarRetiro =
+    document.getElementById(
+        "cerrarRetiro"
+    );
+
+const cancelarRetiro =
+    document.getElementById(
+        "cancelarRetiro"
+    );
+
+const confirmarRetiro =
+    document.getElementById(
+        "confirmarRetiro"
+    );
+
+const cantidadRetirada =
+    document.getElementById(
+        "cantidadRetirada"
+    );
+
+const observacionRetiro =
+    document.getElementById(
+        "observacionRetiro"
+    );
+
+const tituloRetiro =
+    document.getElementById(
+        "tituloRetiro"
+    );
+
+const detallePendienteRetiro =
+    document.getElementById(
+        "detallePendienteRetiro"
+    );
+
+const errorRetiro =
+    document.getElementById(
+        "errorRetiro"
+    );
+
+let detalleSeleccionado =
+    null;
+
+let pendienteSeleccionado =
+    0;
+
+
+function filtrarRecibidos() {
+
+    const texto =
+        filtroRecibidos.value
+            .trim()
+            .toLowerCase();
+
+
+    filasRecibidos.forEach(
+        fila => {
+
+            const busqueda =
+                String(
+                    fila.dataset.busqueda
+                    || ""
+                );
+
+
+            fila.style.display =
+                !texto
+                || busqueda.includes(
+                    texto
+                )
+                    ? ""
+                    : "none";
+
+        }
+    );
+
+}
+
+
+function cerrarModalRetiro() {
+
+    modalRetiro.classList.add(
+        "oculto"
+    );
+
+
+    errorRetiro.classList.add(
+        "oculto"
+    );
+
+
+    errorRetiro.textContent =
+        "";
+
+
+    observacionRetiro.value =
+        "";
+
+
+    detalleSeleccionado =
+        null;
+
+
+    pendienteSeleccionado =
+        0;
+
+}
+
+
+document
+    .querySelectorAll(
+        ".boton-confirmar-retiro"
+    )
+    .forEach(
+        boton => {
+
+            boton.addEventListener(
+                "click",
+                function () {
+
+                    detalleSeleccionado =
+                        Number(
+                            this.dataset.detalleId
+                        );
+
+
+                    pendienteSeleccionado =
+                        Number(
+                            this.dataset.pendiente
+                            || 0
+                        );
+
+
+                    const unidad =
+                        this.dataset.unidad
+                        || "";
+
+
+                    const descripcion =
+                        this.dataset.descripcion
+                        || "Material";
+
+
+                    tituloRetiro.textContent =
+                        descripcion;
+
+
+                    cantidadRetirada.max =
+                        pendienteSeleccionado;
+
+
+                    cantidadRetirada.value =
+                        pendienteSeleccionado;
+
+
+                    detallePendienteRetiro.textContent =
+                        `Máximo pendiente: ${pendienteSeleccionado} ${unidad}`;
+
+
+                    modalRetiro.classList.remove(
+                        "oculto"
+                    );
+
+
+                    cantidadRetirada.focus();
+
+                }
+            );
+
+        }
+    );
+
+
+async function confirmar() {
+
+    if (!detalleSeleccionado) {
+        return;
+    }
+
+
+    const cantidad =
+        Number(
+            cantidadRetirada.value
+        );
+
+
+    if (
+        !Number.isFinite(
+            cantidad
+        )
+        || cantidad <= 0
+    ) {
+
+        errorRetiro.textContent =
+            "Ingrese una cantidad válida.";
+
+
+        errorRetiro.classList.remove(
+            "oculto"
+        );
+
+
+        return;
+
+    }
+
+
+    if (
+        cantidad
+        > pendienteSeleccionado
+    ) {
+
+        errorRetiro.textContent =
+            `La cantidad no puede superar ${pendienteSeleccionado}.`;
+
+
+        errorRetiro.classList.remove(
+            "oculto"
+        );
+
+
+        return;
+
+    }
+
+
+    confirmarRetiro.disabled =
+        true;
+
+
+    confirmarRetiro.textContent =
+        "Confirmando...";
+
+
+    try {
+
+        const respuesta =
+            await fetch(
+                `/repuestos/api/recibidos/${detalleSeleccionado}/confirmar-retiro`,
+                {
+                    method:
+                        "POST",
+
+                    headers:
+                        {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                    body:
+                        JSON.stringify(
+                            {
+                                cantidad:
+                                    cantidad,
+
+                                observaciones:
+                                    observacionRetiro.value
+                                        .trim()
+                            }
+                        )
+                }
+            );
+
+
+        const datos =
+            await respuesta.json();
+
+
+        if (
+            !respuesta.ok
+            || !datos.ok
+        ) {
+
+            throw new Error(
+                datos.error
+                || "No fue posible confirmar el retiro."
+            );
+
+        }
+
+
+        window.location.reload();
+
+
+    } catch (error) {
+
+        errorRetiro.textContent =
+            error.message;
+
+
+        errorRetiro.classList.remove(
+            "oculto"
+        );
+
+
+    } finally {
+
+        confirmarRetiro.disabled =
+            false;
+
+
+        confirmarRetiro.textContent =
+            "Confirmar retiro";
+
+    }
+
+}
+
+
+filtroRecibidos.addEventListener(
+    "input",
+    filtrarRecibidos
+);
+
+
+confirmarRetiro.addEventListener(
+    "click",
+    confirmar
+);
+
+
+cerrarRetiro.addEventListener(
+    "click",
+    cerrarModalRetiro
+);
+
+
+cancelarRetiro.addEventListener(
+    "click",
+    cerrarModalRetiro
+);
+
+
+fondoRetiro.addEventListener(
+    "click",
+    cerrarModalRetiro
+);
+</script>
+
+</body>
+</html>

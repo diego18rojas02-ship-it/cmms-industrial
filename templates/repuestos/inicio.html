@@ -34,6 +34,66 @@
             text-decoration: none;
         }
 
+        .barra-lateral {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 5000;
+
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 12px;
+
+    width: 68px;
+    height: 100vh;
+    padding: 16px 9px;
+
+    border-right: 1px solid #243852;
+
+    background: #030913;
+}
+
+.menu-item {
+    display: grid;
+    place-items: center;
+
+    width: 46px;
+    height: 46px;
+
+    border: 1px solid transparent;
+    border-radius: 12px;
+
+    color: #d6e5f7;
+    text-decoration: none;
+
+    font-size: 21px;
+
+    transition:
+        transform 0.18s ease,
+        border-color 0.18s ease,
+        background 0.18s ease;
+}
+
+.menu-item:hover {
+    transform: translateY(-2px);
+
+    border-color: #3a5575;
+
+    background: #14253a;
+}
+
+.menu-item.activo {
+    border-color: #48aef7;
+
+    background: #123b5f;
+
+    box-shadow:
+        0 0 16px
+        rgba(33, 150, 243, 0.24);
+}
+        
         .pagina-repuestos {
             width: calc(100% - 110px);
             max-width: 1500px;
@@ -252,7 +312,7 @@
 </head>
 
 <body>
-
+    {% include 'menu.html' %}
     <main class="pagina-repuestos">
 
         <header class="encabezado">
@@ -430,70 +490,64 @@
             </a>
 
 
-            <article
-                class="modulo-card modulo-inactivo"
+            <a
+            href="{{ url_for('repuestos.recibidos_por_retirar') }}"
+            class="modulo-card">
+    <div class="modulo-icono">
+        📦
+    </div>
+
+    <div class="modulo-contenido">
+        <span class="modulo-etiqueta">
+            ALMACÉN
+        </span>
+
+        <h2>
+            Recibidos por retirar
+        </h2>
+
+        <p>
+            Controlar los materiales recibidos
+            que todavía deben ser retirados
+            del almacén.
+        </p>
+
+        <span class="boton-modulo">
+            Abrir
+        </span>
+    </div>
+</a>
+
+            <a
+            href="{{ url_for('repuestos.inventario_tecnico') }}"
+            class="modulo-card"
             >
+    <div class="modulo-icono">
+        📁
+    </div>
 
-                <div class="modulo-icono">
-                    📦
-                </div>
+    <div class="modulo-contenido">
 
-                <div class="modulo-contenido">
+        <span class="modulo-etiqueta">
+            STOCK
+        </span>
 
-                    <span class="modulo-etiqueta">
-                        ALMACÉN
-                    </span>
+        <h2>
+            Inventario técnico
+        </h2>
 
-                    <h2>
-                        Recibidos por retirar
-                    </h2>
+        <p>
+            Crear secciones y subsecciones,
+            definir stock mínimo y controlar
+            repuestos críticos.
+        </p>
 
-                    <p>
-                        Controlar los materiales recibidos
-                        que todavía deben ser retirados
-                        del almacén.
-                    </p>
+        <span class="boton-modulo">
+            Abrir
+        </span>
 
-                    <span class="boton-modulo">
-                        Próxima etapa
-                    </span>
-
-                </div>
-
-            </article>
-
-
-            <article
-                class="modulo-card modulo-inactivo"
-            >
-
-                <div class="modulo-icono">
-                    📁
-                </div>
-
-                <div class="modulo-contenido">
-
-                    <span class="modulo-etiqueta">
-                        STOCK
-                    </span>
-
-                    <h2>
-                        Inventario técnico
-                    </h2>
-
-                    <p>
-                        Crear secciones y subsecciones,
-                        definir stock mínimo y controlar
-                        repuestos críticos.
-                    </p>
-
-                    <span class="boton-modulo">
-                        Próxima etapa
-                    </span>
-
-                </div>
-
-            </article>
+    </div>
+</a>
 
 
             <a
